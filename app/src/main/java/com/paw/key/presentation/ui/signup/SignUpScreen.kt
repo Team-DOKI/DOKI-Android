@@ -22,7 +22,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -50,7 +49,7 @@ import timber.log.Timber
 @Composable
 fun SignUpRoute(
     navigateUp: () -> Unit,
-    navigateToHome: () -> Unit,
+    navigateToDBTI: (isSignUp: Boolean) -> Unit,
     viewModel: SignUpViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -102,12 +101,11 @@ fun SignUpRoute(
                     is SignUpSideEffect.NavigateNext -> {
                         viewModel.updateStep()
                     }
-                    is SignUpSideEffect.NavigateHome -> {
-                        navigateToHome()
+                    is SignUpSideEffect.NavigateDBTI -> {
+                        navigateToDBTI(it.isSignUp)
                     }
 
                     is SignUpSideEffect.LaunchCamera -> {
-                        val uri = it.uriString.toUri()
                     }
             }
         }
@@ -148,10 +146,8 @@ fun SignUpRoute(
                 ) == PackageManager.PERMISSION_GRANTED
 
                 if (hasPermission) {
-                    Timber.e("👉 권한 이미 있음! 런처 안 거치고 바로 URI 생성 요청")
                     viewModel.createCameraUri()
                 } else {
-                    Timber.e("👉 권한 없음! 권한 요청 런처 실행")
                     cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
                 }
             },

@@ -61,6 +61,7 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
+import timber.log.Timber
 
 /**
  * [루트 추천] 화면
@@ -93,6 +94,7 @@ fun CommunityRoute( // 루트 추천
             .distinctUntilChanged()
             .collectLatest { lastIndex ->
                 if (lastIndex != null && lastIndex >= state.communityRouteList.size - 3) {
+                    Timber.e("onloadmore")
                     viewModel.onLoadMore()
                 }
             }
@@ -136,8 +138,6 @@ fun CommunityScreen(
     onClickRoute: (Int) -> Unit = {}
 ) {
     val filterList = state.filterUiModel.allCategories.map { it.name }.toImmutableList()
-
-    var selectedFilters by remember { mutableStateOf(setOf<String>()) }
     var isSortMenuExpanded by remember { mutableStateOf(false) }
 
     val topImageHeight = 140.dp

@@ -45,6 +45,7 @@ fun SplashRoute(
     paddingValues: PaddingValues,
     navigateLogin: () -> Unit,
     navigateToHome: () -> Unit,
+    navigateToSignUp: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SplashViewModel = hiltViewModel(),
 ) {
@@ -70,6 +71,8 @@ fun SplashRoute(
             SplashSideEffect.NavigateToLogin -> navigateLogin()
 
             SplashSideEffect.NavigateToHome -> navigateToHome()
+
+            SplashSideEffect.NavigateToSignUp -> navigateToSignUp()
         }
     }
 

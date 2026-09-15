@@ -211,7 +211,7 @@ class SignUpViewModel @Inject constructor(
                         gender = _state.value.petInfo.petGender.value,
                         isNeutered = _state.value.petInfo.petNeutered,
                         breedId = _state.value.petInfo.petBreed.id,
-                        imageId = -1
+                        imageId = 0
                     )
                 ),
                 petImageUri = _state.value.petInfo.petImage?.toString()
@@ -219,7 +219,7 @@ class SignUpViewModel @Inject constructor(
                 localStorageRepository.savePetName(_state.value.petInfo.petName)
 
                 _state.update { it.copy(isLoading = false) }
-                _sideEffect.emit(SignUpSideEffect.NavigateHome)
+                _sideEffect.emit(SignUpSideEffect.NavigateDBTI())
             }.onFailure {
                 Timber.e(it)
                 _state.update { it.copy(isLoading = false) }
@@ -480,8 +480,7 @@ class SignUpViewModel @Inject constructor(
                 state.petInfo.petName.isNotBlank() && state.petInfo.petName.length <= 8 &&
                         state.petInfo.petBirthDate.length == 8 && state.petInfo.petBirthDate.isValidDate() &&
                         state.petInfo.petGender != Gender.UNKNOWN &&
-                        state.petInfo.petBreed.name.isNotBlank() &&
-                        state.petInfo.petImage != null
+                        state.petInfo.petBreed.name.isNotBlank()
             }
 
             SignUpStateType.LOCATION_INFO, SignUpStateType.REGION_MANAGEMENT -> {
@@ -496,20 +495,13 @@ class SignUpViewModel @Inject constructor(
     fun createCameraUri() {
         Timber.e("createCameraUri() 호출됨")
         viewModelScope.launch {
-            val uriString = imageUriManager.createTempImageUri()
-
-            if (uriString == null) {
-                Timber.e("🚨 앗! imageUriManager에서 URI 생성 실패 (null 반환)")
-                return@launch
-            }
+            val uriString = imageUriManager.createTempImageUri() ?: return@launch
 
             val uri = uriString.toUri()
-            Timber.e("✅ 임시 파일 생성 성공: $uri")
 
             updateState {
                 it.copy(petInfo = it.petInfo.copy(cameraUri = uri))
             }
-            Timber.e("✅ State 업데이트 완료! 이제 LaunchedEffect가 반응해야 합니다.")
         }
     }
 

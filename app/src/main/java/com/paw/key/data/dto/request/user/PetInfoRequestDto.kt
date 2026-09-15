@@ -17,7 +17,7 @@ data class PetInfoRequestDto(
     @SerialName("breedId")
     val breedId: Int,
     @SerialName("imageId")
-    val imageId: Int
+    val imageId: Int?
 ) {
     fun toEntity() = PetInfoEntity(
         name = name,

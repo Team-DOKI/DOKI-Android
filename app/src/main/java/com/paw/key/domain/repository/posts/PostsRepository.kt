@@ -14,6 +14,13 @@ import com.paw.key.domain.entity.posts.PostsTop3Entity
 interface PostsRepository {
     suspend fun postPosts(postsInfo: PostsInfoEntity): Result<PostsResultEntity> // 게시물 등록
 
+    suspend fun deletePosts(postId: Int) : Result<Unit>// 게시물 삭제
+
+    suspend fun editPosts(
+        postId: Int,
+        postsInfo: PostsInfoEntity
+    ): Result<PostsResultEntity> // 게시물 수정
+
     suspend fun getPostsDetail(postId: Int): Result<PostsDetailEntity> // 상세 조회
 
     suspend fun getPostsFilter( // route 리스트 조회

@@ -5,11 +5,13 @@ import androidx.navigation.NavOptions
 
 fun NavController.navigateWalkCourse(
     navOptions: NavOptions? = null,
-    routeId: String,
+    routeId: String?,
     infoRouteId: Int? = null,
-    isShared: Boolean = false
+    isShared: Boolean = false,
+    postId: Int? = null,
+    userId: Int? = null,
 ) {
-    navigate(WalkCourse(routeId, infoRouteId, isShared), navOptions)
+    navigate(WalkCourse(routeId, infoRouteId, isShared, postId, userId), navOptions)
 }
 
 fun NavController.navigateWalkPrepare(

@@ -16,7 +16,7 @@ data object WalkCourseGraph : WalkRoute
 fun NavGraphBuilder.walkCourseGraph(
     paddingValues: PaddingValues,
     navController: NavController,
-    navigateWalkReview : () -> Unit,
+    navigateSharedReview : (Int, Boolean, Int, Int) -> Unit,
     navigateWalkReviewWithId : (Int, Int) -> Unit = {_, _ ->} // routeId, routeImageId를 가지고 review로
 ) {
     navigation<WalkCourseGraph>(
@@ -41,7 +41,7 @@ fun NavGraphBuilder.walkCourseGraph(
                         routeImageId = routeImageId
                     )
                 },
-                navigateReview = navigateWalkReview
+                navigateSharedReview = navigateSharedReview
             )
         }
 

@@ -10,5 +10,9 @@ data class LoginResponseDto (
     @SerialName("refreshToken")
     val refreshToken: String,
     @SerialName("isNewUser")
-    val isNewUser: Boolean
+    val isNewUser: Boolean,
+    @SerialName("userId")
+    val userId: Int,
+    @SerialName("petId")
+    val petId: Int
 )

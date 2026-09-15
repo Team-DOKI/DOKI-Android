@@ -1,5 +1,6 @@
 package com.paw.key.presentation.ui.region
 
+import android.view.Gravity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -37,12 +38,14 @@ import com.naver.maps.geometry.LatLngBounds
 import com.naver.maps.map.CameraUpdate
 import com.naver.maps.map.compose.CameraPositionState
 import com.naver.maps.map.compose.ExperimentalNaverMapApi
+import com.naver.maps.map.compose.MapUiSettings
 import com.naver.maps.map.compose.NaverMap
 import com.naver.maps.map.compose.PolygonOverlay
 import com.naver.maps.map.compose.rememberCameraPositionState
 import com.paw.key.core.designsystem.component.CustomSnackBar
+import com.paw.key.core.designsystem.component.DokiBorderButton
+import com.paw.key.core.designsystem.component.DokiButton
 import com.paw.key.core.designsystem.component.LoadingScreen
-import com.paw.key.core.designsystem.component.PawkeyButton
 import com.paw.key.core.designsystem.theme.PawKeyTheme
 import com.paw.key.core.util.UiState
 import com.paw.key.presentation.ui.region.model.RegionDongModel
@@ -65,11 +68,8 @@ fun RegionalManagementRoute(
     snackBarHostState: SnackbarHostState,
     navigateUp: () -> Unit,
     navigateNext: () -> Unit,
-    viewModel: RegionViewModel = hiltViewModel(),
-    modifier: Modifier = Modifier,
     regionId: Int? = -1,
     viewModel: RegionViewModel = hiltViewModel(),
-    navigateDbtiStart: () -> Unit
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -89,77 +89,75 @@ fun RegionalManagementRoute(
                         snackBarHostState.showSnackbar(
                             sideEffect.message
                         )
-                        navigateDbtiStart()
                     }
 
-                    RegionSideEffect.NavigateNext -> navigateDbtiStart()
+                    RegionSideEffect.NavigateNext -> {
+                        Timber.e("region next")
+                        navigateNext()
+                    }
                     RegionSideEffect.NavigateUp -> navigateUp()
                 }
             }
     }
 
-    if (state.currentStep == RegionStep.SEARCH) {
-        RegionalManagementScreen(
-            paddingValues = paddingValues,
-            snackBarHostState = snackBarHostState,
-            cameraPositionState = cameraPositionState,
-            regionCoordinates = persistentListOf(),
-            type = state.drawType,
-            state = state,
-            onClickButton = { viewModel.patchRegion()},
-            onModifyClick = {viewModel.onBackPressedToSearch()},
-            onSizeChanged = { bottomPanelHeightPx.intValue = it },
-            onBackClick = { viewModel.onBackPressed() },
-            onRegionSelected = { gu, dong -> viewModel.onRegionSelected(gu, dong) },
-        )
-        return
-    }
-
-    when (val uiState = state.uiState) {
-        is UiState.Success -> {
-            LaunchedEffect(state.entireCoordinates.size) {
-                if (state.entireCoordinates.size >= 2 && bottomPanelHeightPx.intValue > 0) {
-                    val bounds = LatLngBounds.from(state.entireCoordinates)
-
-                    val bottomPadding =
-                        bottomPanelHeightPx.intValue + with(density) { 100.dp.roundToPx() }
-
-                    cameraPositionState.move(
-                        CameraUpdate.fitBounds(bounds, 100, 100, 100, bottomPadding)
-                    )
-                }
-            }
-
+    when (state.currentStep) {
+        RegionStep.SEARCH -> {
             RegionalManagementScreen(
                 paddingValues = paddingValues,
                 snackBarHostState = snackBarHostState,
                 cameraPositionState = cameraPositionState,
-                regionCoordinates = uiState.data,
+                regionCoordinates = persistentListOf(),
                 type = state.drawType,
                 state = state,
-                onClickButton = {
-                    viewModel.patchRegion()
-                },
-                onSizeChanged = {
-                    bottomPanelHeightPx.intValue = it
-                },
-                onRegionSelected = { gu, dong ->
-                    viewModel.onRegionSelected(gu, dong)
-                },
-                onBackClick = {
-                    viewModel.onBackPressed()
-                },
-                onModifyClick = {
-                    viewModel.onBackPressedToSearch()
-                },
+                onClickButton = { viewModel.patchRegion() },
+                onModifyClick = { viewModel.onBackPressedToSearch() },
+                onSizeChanged = { bottomPanelHeightPx.intValue = it },
+                onBackClick = { viewModel.onBackPressed() },
+                onRegionSelected = { gu, dong -> viewModel.onRegionSelected(gu, dong) },
+                onSaveRegionClick = { viewModel.patchRegion() },
                 modifier = Modifier
             )
         }
 
-        is UiState.Loading -> LoadingScreen()
+        RegionStep.MAP -> {
+            when (val uiState = state.uiState) {
+                is UiState.Success -> {
+                    LaunchedEffect(state.entireCoordinates.size) {
+                        if (state.entireCoordinates.size >= 2 && bottomPanelHeightPx.intValue > 0) {
+                            val bounds = LatLngBounds.from(state.entireCoordinates)
+                            val bottomPadding = bottomPanelHeightPx.intValue + with(density) { 100.dp.roundToPx() }
 
-        else -> {
-            Timber.e("Failure")
+                            cameraPositionState.move(
+                                CameraUpdate.fitBounds(bounds, 100, 100, 100, bottomPadding)
+                            )
+                        }
+                    }
+
+                    RegionalManagementScreen(
+                        paddingValues = paddingValues,
+                        snackBarHostState = snackBarHostState,
+                        cameraPositionState = cameraPositionState,
+                        regionCoordinates = uiState.data,
+                        type = state.drawType,
+                        state = state,
+                        onClickButton = { viewModel.confirmRegionOnMap() },
+                        onModifyClick = { viewModel.onBackPressedToSearch() },
+                        onSizeChanged = { bottomPanelHeightPx.intValue = it },
+                        onBackClick = { viewModel.onBackPressed() },
+                        onRegionSelected = { gu, dong -> viewModel.onRegionSelected(gu, dong) },
+                        onSaveRegionClick = { viewModel.patchRegion() },
+                        modifier = Modifier
+                    )
+                }
+
+                is UiState.Loading -> {
+                    LoadingScreen()
+                }
+
+                else -> {
+                    Timber.e("Failure")
+                }
+            }
         }
     }
 }
@@ -178,6 +176,7 @@ fun RegionalManagementScreen(
     onSizeChanged: (Int) -> Unit,
     onRegionSelected: (RegionGuModel, RegionDongModel) -> Unit,
     onBackClick: () -> Unit,
+    onSaveRegionClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -219,7 +218,8 @@ fun RegionalManagementScreen(
                         selectedDong = state.selectedDong,
                         onRegionSelected = { gu, dong ->
                             onRegionSelected(gu, dong)
-                        }
+                        },
+                        onSaveRegionClick = onSaveRegionClick
                     )
                 }
 
@@ -227,7 +227,12 @@ fun RegionalManagementScreen(
                     NaverMap(
                         modifier = Modifier
                             .align(Alignment.Center),
-                        cameraPositionState = cameraPositionState
+                        cameraPositionState = cameraPositionState,
+                        uiSettings = MapUiSettings(
+                            logoGravity = Gravity.TOP or Gravity.END,
+                            isZoomControlEnabled = false,
+                            isLogoClickEnabled = true
+                        ),
                     ) {
                         when (type) {
                             DrawType.SINGLE -> {
@@ -307,14 +312,14 @@ fun RegionalManagementScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            PawkeyButton(
+                            DokiBorderButton(
                                 text = "위치 수정하기",
                                 onClick = onModifyClick,
                                 modifier = Modifier.weight(1f),
                                 enabled = true,
                             )
 
-                            PawkeyButton(
+                            DokiButton(
                                 text = "선택",
                                 onClick = onClickButton,
                                 modifier = Modifier.weight(1f),

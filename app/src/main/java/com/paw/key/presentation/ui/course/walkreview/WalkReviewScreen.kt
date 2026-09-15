@@ -42,6 +42,7 @@ import com.paw.key.presentation.ui.course.walkreview.component.WalkReviewDialog
 import com.paw.key.presentation.ui.course.walkreview.component.WalkReviewImageRow
 import com.paw.key.presentation.ui.course.walkreview.component.WalkReviewMultipleFilter
 import com.paw.key.presentation.ui.course.walkreview.component.WalkReviewSingleFilter
+import com.paw.key.presentation.ui.course.walkreview.component.WalkSharedReviewHeader
 import com.paw.key.presentation.ui.course.walkreview.state.WalkReviewState
 import com.paw.key.presentation.ui.course.walkreview.viewmodel.WalkReviewViewModel
 import kotlinx.collections.immutable.toImmutableList
@@ -52,7 +53,7 @@ fun WalkReviewRoute(
     paddingValues: PaddingValues,
     navigateUp: () -> Unit = {},
     navigateHome: () -> Unit = {},
-    navigateWalkDetail: () -> Unit = {},
+    navigateWalkDetail: (postId: Int, routeId: Int) -> Unit = {_,_->},
     viewModel: WalkReviewViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -98,7 +99,7 @@ fun WalkReviewRoute(
         paddingValues = paddingValues,
         navigateUp = navigateUp,
         navigateHome = navigateHome,
-        navigateWalkDetail = navigateWalkDetail,
+        navigateWalkDetail = { navigateWalkDetail(state.completePostsUiModel.postId, state.completePostsUiModel.routeId) },
         state = state,
         onClickImage = {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -113,7 +114,8 @@ fun WalkReviewRoute(
         onFilterClick = viewModel::onFilterClick,
         onTitleValueChange = viewModel::updateReviewTitle,
         onContentValueChange = viewModel::updateReviewContent,
-        onClickComplete = viewModel::completeWalkReview
+        onClickComplete = viewModel::completeWalkReview,
+        onClickSharedComplete = viewModel::completeSharedReview
     )
 }
 
@@ -129,7 +131,8 @@ private fun WalkReviewScreen(
     onFilterClick: (Int, FilterCategoryUiModel) -> Unit = {_, _ ->},
     onTitleValueChange: (String) -> Unit = {},
     onContentValueChange: (String) -> Unit = {},
-    onClickComplete: (Boolean) -> Unit = {}
+    onClickComplete: (Boolean) -> Unit = {},
+    onClickSharedComplete: () -> Unit = {}
 ) {
     Column (
         modifier = Modifier
@@ -150,15 +153,21 @@ private fun WalkReviewScreen(
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        WalkReviewImageRow(
-            imageList = state.walkReviewImageList,
-            onClickCard = { index, _ ->
-                if (index != 0) {
-                    onClickImage()
-                }
-            },
-            onImageDelete = onImageDelete,
-        )
+        if (state.isShared) {
+            WalkSharedReviewHeader(
+                item = state.sharedReviewHeader,
+            )
+        } else {
+            WalkReviewImageRow(
+                imageList = state.walkReviewImageList,
+                onClickCard = { index, _ ->
+                    if (index != 0) {
+                        onClickImage()
+                    }
+                },
+                onImageDelete = onImageDelete,
+            )
+        }
 
         Spacer(modifier = Modifier.height(20.dp))
 
@@ -215,103 +224,113 @@ private fun WalkReviewScreen(
                 Spacer(modifier = Modifier.height(24.dp))
             }
 
+            if (!state.isShared) {
+                Spacer(modifier = Modifier.height(40.dp))
+
+                Text(
+                    text = "산책에 대한 후기를 작성해주세요",
+                    style = PawKeyTheme.typography.subTitle,
+                    color = PawKeyTheme.colors.contents
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                BasicTextField(
+                    value = state.walkReviewTitle,
+                    onValueChange = {
+                        if (it.length <= 14) {
+                            onTitleValueChange(it)
+                        }
+                    },
+                    textStyle = PawKeyTheme.typography.bodyActive.copy(color = PawKeyTheme.colors.contents),
+                    modifier = Modifier.fillMaxWidth(),
+                    decorationBox = { innerTextField ->
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    color = PawKeyTheme.colors.defaultBright,
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .padding(16.dp),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            if (state.walkReviewTitle.isEmpty()) {
+                                Text(
+                                    text = "후기 제목을 14글자 이내로 입력해주세요",
+                                    style = PawKeyTheme.typography.bodyDefault,
+                                    color = PawKeyTheme.colors.defaultMiddle
+                                )
+                            }
+                            innerTextField()
+                        }
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                BasicTextField(
+                    value = state.walkReviewContent,
+                    onValueChange = {
+                        if (it.length <= 250) {
+                            onContentValueChange(it)
+                        }
+                    },
+                    textStyle = PawKeyTheme.typography.bodyActive.copy(color = PawKeyTheme.colors.contents),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 216.dp),
+                    decorationBox = { innerTextField ->
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    color = PawKeyTheme.colors.defaultBright,
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .padding(16.dp),
+                            contentAlignment = Alignment.TopStart
+                        ) {
+                            if (state.walkReviewContent.isEmpty()) {
+                                Text(
+                                    text = "산책에 대한 내용을 250자 이내로 작성해주세요",
+                                    style = PawKeyTheme.typography.bodyDefault,
+                                    color = PawKeyTheme.colors.defaultMiddle
+                                )
+                            }
+                            innerTextField()
+                        }
+                    }
+                )
+            }
+
             Spacer(modifier = Modifier.height(40.dp))
 
-            Text(
-                text = "산책에 대한 후기를 작성해주세요",
-                style = PawKeyTheme.typography.subTitle,
-                color = PawKeyTheme.colors.contents
-            )
+           if (!state.isShared) {
+               DokiBorderButton(
+                   text = "산책 기록 나만보기",
+                   enabled = true,
+                   onClick = {
+                       onClickComplete(false)
+                   }
+               )
 
-            Spacer(modifier = Modifier.height(16.dp))
+               Spacer(modifier = Modifier.height(8.dp))
 
-            BasicTextField(
-                value = state.walkReviewTitle,
-                onValueChange = {
-                    if (it.length <= 14) {
-                        onTitleValueChange(it)
-                    }
-                },
-                textStyle = PawKeyTheme.typography.bodyActive.copy(color = PawKeyTheme.colors.contents),
-                modifier = Modifier.fillMaxWidth(),
-                decorationBox = { innerTextField ->
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(
-                                color = PawKeyTheme.colors.defaultBright,
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                            .padding(16.dp),
-                        contentAlignment = Alignment.CenterStart
-                    ) {
-                        if (state.walkReviewTitle.isEmpty()) {
-                            Text(
-                                text = "후기 제목을 14글자 이내로 입력해주세요",
-                                style = PawKeyTheme.typography.bodyDefault,
-                                color = PawKeyTheme.colors.defaultMiddle
-                            )
-                        }
-                        innerTextField()
-                    }
-                }
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            BasicTextField(
-                value = state.walkReviewContent,
-                onValueChange = {
-                    if (it.length <= 250) {
-                        onContentValueChange(it)
-                    }
-                },
-                textStyle = PawKeyTheme.typography.bodyActive.copy(color = PawKeyTheme.colors.contents),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 216.dp),
-                decorationBox = { innerTextField ->
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(
-                                color = PawKeyTheme.colors.defaultBright,
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                            .padding(16.dp),
-                        contentAlignment = Alignment.TopStart
-                    ) {
-                        if (state.walkReviewContent.isEmpty()) {
-                            Text(
-                                text = "산책에 대한 내용을 250자 이내로 작성해주세요",
-                                style = PawKeyTheme.typography.bodyDefault,
-                                color = PawKeyTheme.colors.defaultMiddle
-                            )
-                        }
-                        innerTextField()
-                    }
-                }
-            )
-
-            Spacer(modifier = Modifier.height(40.dp))
-
-            DokiBorderButton(
-                text = "산책 기록 나만보기",
-                enabled = true,
-                onClick = {
-                    onClickComplete(false)
-                }
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            DokiButton(
-                text = "산책 기록 공유하기",
-                enabled = state.walkReviewTitle.isNotEmpty() && state.walkReviewContent.isNotEmpty(),
-                onClick = {
-                    onClickComplete(true)
-                }
-            )
+               DokiButton(
+                   text = "산책 기록 공유하기",
+                   enabled = state.walkReviewTitle.isNotEmpty() && state.walkReviewContent.isNotEmpty(),
+                   onClick = {
+                       onClickComplete(true)
+                   }
+               )
+           } else {
+               DokiButton(
+                   text = "산책 후기 남기기",
+                   enabled = true,
+                   onClick = onClickSharedComplete
+               )
+           }
         }
     }
 

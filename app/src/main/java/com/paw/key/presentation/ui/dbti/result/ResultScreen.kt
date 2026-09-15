@@ -1,7 +1,16 @@
 package com.paw.key.presentation.ui.dbti.result
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -12,18 +21,13 @@ import com.paw.key.core.designsystem.component.DokiButton
 import com.paw.key.core.designsystem.component.TopBar
 import com.paw.key.core.designsystem.theme.PawKeyTheme
 import com.paw.key.presentation.ui.dbti.result.component.ResultBox
-import com.paw.key.presentation.ui.dbti.result.component.TraitAnalysis
-import kotlinx.collections.immutable.ImmutableList
+import com.paw.key.presentation.ui.dbti.result.model.DbtiResultUiModel
+import com.paw.key.presentation.ui.dbti.result.model.TraitAnalysis
 import kotlinx.collections.immutable.persistentListOf
 
 @Composable
 fun ResultScreen(
-    type: String,
-    name: String,
-    imageUrl: String?,
-    keywords: ImmutableList<String>,
-    description: String,
-    analysis: ImmutableList<TraitAnalysis>,
+    resultUiModel: DbtiResultUiModel,
     onRetakeTest: () -> Unit,
     onGoHome: () -> Unit,
     navigateUp: () -> Unit,
@@ -42,43 +46,49 @@ fun ResultScreen(
 
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Spacer(modifier = Modifier.weight(20f))
+            Spacer(modifier = Modifier.height(24.dp))
 
-            ResultBox(
-                type = type,
-                name = name,
-                imageUrl = imageUrl,
-                keywords = keywords,
-                description = description,
-                analysis = analysis
-            )
-
-            Spacer(modifier = Modifier.weight(20f))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                DokiBorderButton(
-                    text = "다시 테스트하기",
-                    onClick = onRetakeTest,
-                    modifier = Modifier.weight(1f),
-                    enabled = true
-                )
-
-                DokiButton(
-                    text = "홈으로 가기",
-                    onClick = onGoHome,
-                    modifier = Modifier.weight(1f),
-                    enabled = true
+            with(resultUiModel) {
+                ResultBox(
+                    type = type,
+                    name = name,
+                    imageUrl = imageUrl,
+                    keywords = keywords,
+                    description = description,
+                    analysis = analysis
                 )
             }
 
             Spacer(modifier = Modifier.height(24.dp))
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 24.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            DokiBorderButton(
+                text = "다시 테스트하기",
+                onClick = onRetakeTest,
+                modifier = Modifier.weight(1f),
+                enabled = true
+            )
+
+            DokiButton(
+                text = "홈으로 가기",
+                onClick = onGoHome,
+                modifier = Modifier.weight(1f),
+                enabled = true
+            )
         }
     }
 }
@@ -88,30 +98,32 @@ fun ResultScreen(
 private fun ResultScreenPreview() {
     PawKeyTheme {
         ResultScreen(
-            type = "EPR",
-            name = "탐험대장 멍멍이",
-            imageUrl = null,
-            keywords = persistentListOf("모험", "활발", "사교성"),
-            description = "활발하고 친구들과 어울리며 모험을 좋아해요.\n집사에게 언제나 애너지를 주는 타입!",
-            analysis = persistentListOf(
-                TraitAnalysis(
-                    leftLabel = "휴식가",
-                    rightLabel = "탐험가",
-                    dominantSide = "right",
-                    score = 2
+            resultUiModel = DbtiResultUiModel(
+                type = "EPR",
+                name = "탐험대장 멍멍이",
+                imageUrl = null,
+                keywords = persistentListOf("모험", "활발", "사교성"),
+                description = "활발하고 친구들과 어울리며 모험을 좋아해요.\n집사에게 언제나 애너지를 주는 타입!",
+                analysis = persistentListOf(
+                    TraitAnalysis(
+                        leftLabel = "휴식가",
+                        rightLabel = "탐험가",
+                        dominantSide = "right",
+                        score = 2
+                    ),
+                    TraitAnalysis(
+                        leftLabel = "부끄멍",
+                        rightLabel = "적극멍",
+                        dominantSide = "right",
+                        score = 2
+                    ),
+                    TraitAnalysis(
+                        leftLabel = "루틴러",
+                        rightLabel = "자유러",
+                        dominantSide = "left",
+                        score = 2
+                    )
                 ),
-                TraitAnalysis(
-                    leftLabel = "부끄멍",
-                    rightLabel = "적극멍",
-                    dominantSide = "right",
-                    score = 2
-                ),
-                TraitAnalysis(
-                    leftLabel = "루틴러",
-                    rightLabel = "자유러",
-                    dominantSide = "left",
-                    score = 2
-                )
             ),
             onRetakeTest = {},
             onGoHome = {},

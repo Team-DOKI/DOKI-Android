@@ -27,7 +27,7 @@ sealed interface SignUpSideEffect {
     data class ShowSnackBar(val message: String) : SignUpSideEffect
     data object NavigateUp : SignUpSideEffect
     data object NavigateNext : SignUpSideEffect
-    data object NavigateHome : SignUpSideEffect
+    data class NavigateDBTI(val isSignUp: Boolean = true) : SignUpSideEffect
     data class LaunchCamera(val uriString: String) : SignUpSideEffect
 }
 

@@ -9,9 +9,9 @@ class RegionCurrentRepositoryImpl @Inject constructor(
     private val dataSource: RegionCurrentDataSource,
 ) : RegionCurrentRepository {
 
-    override suspend fun regionCurrent(userId: Int): Result<RegionCurrentDataEntity> {
+    override suspend fun regionCurrent(): Result<RegionCurrentDataEntity> {
         return runCatching {
-            val response = dataSource.regionCurrent(userId)
+            val response = dataSource.regionCurrent()
             if (response.code == "S000") {
                 response.data.toEntity()
             } else {

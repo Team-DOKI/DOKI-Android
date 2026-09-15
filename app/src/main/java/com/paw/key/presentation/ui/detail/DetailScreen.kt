@@ -31,43 +31,85 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.shadow.Shadow
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.paw.key.R
 import com.paw.key.core.designsystem.component.DokiButton
+import com.paw.key.core.designsystem.component.ImageModal
 import com.paw.key.core.designsystem.component.SubChip
 import com.paw.key.core.designsystem.component.TopBar
 import com.paw.key.core.designsystem.component.UrlImage
+import com.paw.key.core.designsystem.component.dialog.DokiDialog
 import com.paw.key.core.designsystem.component.walk.WalkReviewInfoHolder
 import com.paw.key.core.designsystem.theme.PawKeyTheme
+import com.paw.key.core.extension.collectSideEffect
 import com.paw.key.presentation.ui.detail.component.DetailImageHolder
-import com.paw.key.presentation.ui.detail.component.DetailTopReview
 import com.paw.key.presentation.ui.detail.component.DokiDeleteButton
 import com.paw.key.presentation.ui.detail.component.FilterChipDivider
+import com.paw.key.presentation.ui.detail.model.DetailViewType
 
 @Composable
 fun DetailRoute(
     paddingValues: PaddingValues,
-    navigateToSharedCourse: (routeId: String) -> Unit = {},
+    navigateToSharedCourse: (routeId: String, postId : Int, userId: Int) -> Unit = {_, _, _ -> },
+    navigateUp: () -> Unit = {},
     viewModel: DetailViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    DetailScreen(
-        paddingValues = paddingValues,
-        state = state,
-        navigateToSharedCourse = navigateToSharedCourse
-    )
+    var isShowDialog by remember { mutableStateOf(false) }
+
+    viewModel.sideEffect.collectSideEffect {
+        when (it) {
+            DetailSideEffect.navigateToCommunity -> navigateUp()
+        }
+    }
+
+    when (state.viewType) {
+        DetailViewType.DETAIL -> {
+            DetailScreen(
+                paddingValues = paddingValues,
+                state = state,
+                navigateToSharedCourse = navigateToSharedCourse,
+                onBackClick = navigateUp,
+                onDeletePosts = {
+                    isShowDialog = true
+                },
+                onEditPosts = viewModel::editPosts
+            )
+        }
+
+        DetailViewType.EDIT -> {
+
+        }
+    }
+
+    if (isShowDialog) {
+        DokiDialog(
+            onDismiss = { isShowDialog = false },
+            onConfirm = viewModel::removePosts,
+            title = "삭제하시겠어요?",
+            subDescription = "삭제된 게시글은 복구할 수 없어요",
+            confirmText = "삭제하기",
+            dismissText = "취소"
+        )
+    }
 }
 @Composable
 private fun DetailScreen(
     paddingValues: PaddingValues,
     state: DetailState,
-    navigateToSharedCourse: (routeId: String) -> Unit = {}
+    navigateToSharedCourse: (routeId: String, postId : Int, userId: Int) -> Unit = {_, _, _ -> },
+    onBackClick: () -> Unit = {},
+    onDeletePosts: () -> Unit = {},
+    onEditPosts: () -> Unit = {}
 ) {
     var isExpanded by remember { mutableStateOf(false) }
+    var isShowImageDialog by remember { mutableStateOf(false) }
+    var selectedImage by remember { mutableStateOf("") }
 
     val maxVisibleItems = 5
     val visibleItems = if (isExpanded) state.postDetail.categoryTagTexts else state.postDetail.categoryTagTexts.take(maxVisibleItems)
@@ -80,7 +122,8 @@ private fun DetailScreen(
     ) {
         TopBar(
             title = "루트 상세정보",
-            thickness = 2
+            thickness = 2,
+            onBackClick = onBackClick,
         )
 
         Box(
@@ -92,7 +135,8 @@ private fun DetailScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .fillMaxHeight(0.4f)
-                    .align(Alignment.TopCenter)
+                    .align(Alignment.TopCenter),
+                contentScale = ContentScale.FillWidth
             )
 
             Column(
@@ -100,7 +144,6 @@ private fun DetailScreen(
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
                     .fillMaxHeight(0.75f)
-                    .verticalScroll(rememberScrollState())
                     .dropShadow(
                         shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
                         shadow = Shadow(
@@ -114,183 +157,207 @@ private fun DetailScreen(
                         shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
                     )
             ) {
-                Text(
-                    text = state.postDetail.title,
-                    style = PawKeyTheme.typography.header3,
-                    color = PawKeyTheme.colors.contents,
-                    modifier = Modifier.padding(16.dp)
-                )
-
-                HorizontalDivider(
-                    thickness = 1.dp,
-                    color = PawKeyTheme.colors.defaultButton,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Row(
-                    modifier = Modifier.padding(vertical = 16.dp, horizontal = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
                 ) {
-                    UrlImage(
-                        url = state.postDetail.authorInfo.petProfileImage,
+                    Text(
+                        text = state.postDetail.title,
+                        style = PawKeyTheme.typography.header3,
+                        color = PawKeyTheme.colors.contents,
+                        modifier = Modifier.padding(16.dp)
+                    )
+
+                    HorizontalDivider(
+                        thickness = 1.dp,
+                        color = PawKeyTheme.colors.defaultButton,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Row(
+                        modifier = Modifier.padding(vertical = 16.dp, horizontal = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        UrlImage(
+                            url = state.postDetail.authorInfo.petProfileImage,
+                            modifier = Modifier
+                                .size(43.dp)
+                                .clip(RoundedCornerShape(50.dp)),
+                            contentScale = ContentScale.Crop,
+                            isUserIcon = true
+                        )
+
+                        Text(
+                            text = state.postDetail.authorInfo.petName,
+                            style = PawKeyTheme.typography.subTitle,
+                            color = PawKeyTheme.colors.defaultDark
+                        )
+                    }
+
+                    HorizontalDivider(
+                        thickness = 1.dp,
+                        color = PawKeyTheme.colors.defaultButton,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                    )
+
+                    WalkReviewInfoHolder(
+                        icon = R.drawable.ic_walk_review_location,
+                        content = state.postDetail.routeDisplay.locationText,
                         modifier = Modifier
-                            .size(43.dp)
-                            .clip(RoundedCornerShape(50.dp))
+                            .padding(top = 8.dp)
+                            .padding(horizontal = 16.dp)
+                    )
+
+                    WalkReviewInfoHolder(
+                        icon = R.drawable.ic_walk_review_time,
+                        content = state.postDetail.routeDisplay.dateTimeText,
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp)
+                    )
+
+                    WalkReviewInfoHolder(
+                        icon = R.drawable.ic_walk_review_course_info,
+                        content = state.postDetail.routeDisplay.metaTagTexts.joinToString(separator = " | "),
+                        modifier = Modifier
+                            .padding(bottom = 8.dp)
+                            .padding(horizontal = 16.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    FlowRow (
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                            .animateContentSize(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(9.dp)
+                    ) {
+                        visibleItems.forEach { item ->
+                            SubChip(
+                                text = item,
+                                isActionChip = true,
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(11.dp))
+
+
+                    if (!isExpanded && hiddenCount > 0) {
+                        FilterChipDivider(
+                            hiddenCount = hiddenCount,
+                            onClick = { isExpanded = !isExpanded },
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        )
+                    }
+
+                    Spacer(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(8.dp)
+                            .background(
+                                color = PawKeyTheme.colors.defaultButton,
+                            )
+                    )
+
+                    DetailImageHolder(
+                        imageUrls = state.postDetail.walkImages,
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp)
+                            .padding(top = 20.dp, bottom = 12.dp),
+                        onClickImage = {
+                            selectedImage = state.postDetail.walkImages[it].imageUrl
+                            isShowImageDialog = true
+                        }
                     )
 
                     Text(
-                        text = state.postDetail.authorInfo.petName,
-                        style = PawKeyTheme.typography.subTitle,
-                        color = PawKeyTheme.colors.defaultDark
-                    )
-                }
-
-                HorizontalDivider(
-                    thickness = 1.dp,
-                    color = PawKeyTheme.colors.defaultButton,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
-                )
-
-                WalkReviewInfoHolder(
-                    icon = R.drawable.ic_walk_review_location,
-                    content = state.postDetail.routeDisplay.locationText,
-                    modifier = Modifier
-                        .padding(top = 8.dp)
-                        .padding(horizontal = 16.dp)
-                )
-
-                WalkReviewInfoHolder(
-                    icon = R.drawable.ic_walk_review_time,
-                    content = state.postDetail.routeDisplay.dateTimeText,
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp)
-                )
-
-                WalkReviewInfoHolder(
-                    icon = R.drawable.ic_walk_review_course_info,
-                    content = state.postDetail.routeDisplay.metaTagTexts.joinToString(separator = " | "),
-                    modifier = Modifier
-                        .padding(bottom = 8.dp)
-                        .padding(horizontal = 16.dp)
-                )
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                FlowRow (
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .animateContentSize(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(9.dp)
-                ) {
-                    visibleItems.forEach { item ->
-                        SubChip(
-                            text = item,
-                            isActionChip = true,
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(11.dp))
-
-
-                if (!isExpanded) {
-                    FilterChipDivider(
-                        hiddenCount = hiddenCount,
-                        onClick = { isExpanded = !isExpanded },
+                        text = state.postDetail.description,
+                        color = PawKeyTheme.colors.contents,
+                        style = PawKeyTheme.typography.bodyDefault,
                         modifier = Modifier.padding(horizontal = 16.dp)
                     )
-                }
 
-                Spacer(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(8.dp)
-                        .background(
-                            color = PawKeyTheme.colors.defaultButton,
-                        )
-                )
+                    Spacer(
+                        modifier = Modifier.height(20.dp)
+                    )
 
-                DetailImageHolder(
-                    imageUrls = state.postDetail.walkImages,
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp)
-                        .padding(top = 20.dp, bottom = 12.dp)
-                )
+                    Spacer(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(8.dp)
+                            .background(
+                                color = PawKeyTheme.colors.defaultButton,
+                            )
+                    )
 
-                Text(
-                    text = state.postDetail.description,
-                    color = PawKeyTheme.colors.contents,
-                    style = PawKeyTheme.typography.bodyDefault,
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
+                    // Todo : top 3 리뷰 구현되면 사
+                    /*DetailTopReview(
+                        reviewData = state.reviewDetail,
+                        isShared = state.postDetail.isPublic
+                    )
 
-                Spacer(
-                    modifier = Modifier.height(20.dp)
-                )
+                    Spacer(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(8.dp)
+                            .background(
+                                color = PawKeyTheme.colors.defaultButton,
+                            )
+                    )*/
 
-                Spacer(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(8.dp)
-                        .background(
-                            color = PawKeyTheme.colors.defaultButton,
-                        )
-                )
+                    Spacer(
+                        modifier = Modifier.height(40.dp)
+                    )
 
-                DetailTopReview(
-                    reviewData = state.reviewDetail,
-                    isShared = state.postDetail.isPublic
-                )
-
-                Spacer(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(8.dp)
-                        .background(
-                            color = PawKeyTheme.colors.defaultButton,
-                        )
-                )
-
-                Spacer(
-                    modifier = Modifier.height(40.dp)
-                )
-
-                Row (
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .padding(bottom = 20.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    if (state.postDetail.isMine) {
-                        DokiDeleteButton(
-                            text = "삭제하기",
-                            onClick = {},
-                            modifier = Modifier.weight(1f)
-                        )
-                        DokiButton(
-                            text = "수정하기",
-                            enabled = true,
-                            onClick = {},
-                            modifier = Modifier.weight(1f)
-                        )
-                    } else {
-                        DokiButton(
-                            text = "해당 루트로 산책하기",
-                            enabled = true,
-                            onClick = {
-                                navigateToSharedCourse(state.postDetail.routeDisplay.routeId.toString())
-                            },
-                            modifier = Modifier.weight(1f)
-                        )
+                    Row (
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                            .padding(bottom = 20.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (state.postDetail.isMine) {
+                            DokiDeleteButton(
+                                text = "삭제하기",
+                                onClick = onDeletePosts,
+                                modifier = Modifier.weight(1f)
+                            )
+                            DokiButton(
+                                text = "수정하기",
+                                enabled = true,
+                                onClick = onEditPosts,
+                                modifier = Modifier.weight(1f)
+                            )
+                        } else {
+                            DokiButton(
+                                text = "해당 루트로 산책하기",
+                                enabled = state.postDetail.routeDisplay.routeId != -1,
+                                onClick = {
+                                    navigateToSharedCourse(
+                                        state.postDetail.routeDisplay.routeId.toString(),
+                                        state.postDetail.postId,
+                                        state.postDetail.authorInfo.authorId
+                                    )
+                                },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
                     }
                 }
             }
         }
+    }
+
+    if (isShowImageDialog) {
+        ImageModal(
+            imageUrl = selectedImage,
+            onDismiss = { isShowImageDialog = false }
+        )
     }
 }
 

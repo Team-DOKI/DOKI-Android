@@ -15,13 +15,13 @@ fun NavHostController.navigateSignUp(
 }
 
 fun NavGraphBuilder.signUpNavGraph(
-    navigateToHome: () -> Unit,
+    navigateToDBTI: (isSignUp: Boolean) -> Unit,
     navigateUp: () -> Unit
 ) {
     composable<SignUp> {
         SignUpRoute(
             navigateUp = navigateUp,
-            navigateToHome = navigateToHome
+            navigateToDBTI = navigateToDBTI
         )
     }
 }

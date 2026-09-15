@@ -1,6 +1,7 @@
 package com.paw.key.presentation.ui.dbti
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -33,7 +34,10 @@ fun StartScreen(
     onSkip: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier = modifier.fillMaxSize()) {
+    Box(modifier = modifier.fillMaxSize()
+        .background(
+            color = PawKeyTheme.colors.background
+        )) {
         // 이미지를 배경으로
         Image(
             painter = painterResource(id = R.drawable.doki_welcome),

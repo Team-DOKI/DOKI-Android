@@ -49,6 +49,7 @@ class WalkCompleteViewModel @Inject constructor(
 
             launch {
                 finishResultUseCase().collect { entity ->
+                    Timber.e("finishResult $entity")
                     entity?.let {
                         _state.update { currentState ->
                             currentState.copy(
@@ -61,6 +62,7 @@ class WalkCompleteViewModel @Inject constructor(
 
             launch {
                 finishWalkInfoUseCase().collect { walkFinish ->
+                    Timber.e("finishWalk $walkFinish")
                     walkFinish?.let {
                         _state.update { currentState ->
                             currentState.copy(
@@ -86,7 +88,6 @@ class WalkCompleteViewModel @Inject constructor(
                     }
                 }
                 .onFailure {
-                    it.printStackTrace()
                     Timber.e("complete $it")
                 }
         }

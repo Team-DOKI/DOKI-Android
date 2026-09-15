@@ -7,10 +7,10 @@ import com.paw.key.data.remote.datasource.login.AuthRemoteDataSource
 import com.paw.key.data.remote.datasource.login.GoogleAuthDataSource
 import com.paw.key.data.remote.datasource.login.KakaoAuthDataSource
 import com.paw.key.data.remote.datasource.mypage.MypageDataSource
-import com.paw.key.data.remote.datasource.mypage.MypageDataSourceImpl
+import com.paw.key.data.remote.datasource.datasourceimpl.MypageDataSourceImpl
 import com.paw.key.data.repository.mypage.MypageRepositoryImpl
 import com.paw.key.data.repositoryimpl.ArchivedListRepositoryImpl
-import com.paw.key.data.repositoryimpl.DbtiRepositoryImpl
+import com.paw.key.data.repositoryimpl.DBTI.DbtiRepositoryImpl
 import com.paw.key.data.repositoryimpl.RegionRepositoryImpl
 import com.paw.key.data.repositoryimpl.WalkSharedResultRepositoryImpl
 import com.paw.key.data.repositoryimpl.home.HomeRepositoryImpl
@@ -19,11 +19,12 @@ import com.paw.key.data.repositoryimpl.image.ImageRepositoryImpl
 import com.paw.key.data.repositoryimpl.localstorage.LocalStorageRepositoryImpl
 import com.paw.key.data.repositoryimpl.login.AuthRepositoryImpl
 import com.paw.key.data.repositoryimpl.posts.PostsRepositoryImpl
+import com.paw.key.data.repositoryimpl.reviews.ReviewsRepositoryImpl
 import com.paw.key.data.repositoryimpl.user.UserRepositoryImpl
 import com.paw.key.data.repositoryimpl.walk.WalkRepositoryImpl
 import com.paw.key.data.repositoryimpl.walkpreparation.WalkPreparationRepositoryImpl
 import com.paw.key.domain.repository.ArchivedListRepository
-import com.paw.key.domain.repository.DbtiRepository
+import com.paw.key.domain.repository.DBTI.DbtiRepository
 import com.paw.key.domain.repository.RegionRepository
 import com.paw.key.domain.repository.WalkSharedResultRepository
 import com.paw.key.domain.repository.home.HomeRepository
@@ -33,6 +34,7 @@ import com.paw.key.domain.repository.localstorage.LocalStorageRepository
 import com.paw.key.domain.repository.login.AuthRepository
 import com.paw.key.domain.repository.mypage.MypageRepository
 import com.paw.key.domain.repository.posts.PostsRepository
+import com.paw.key.domain.repository.reviews.ReviewsRepository
 import com.paw.key.domain.repository.user.UserRepository
 import com.paw.key.domain.repository.walk.WalkRepository
 import com.paw.key.domain.repository.walkpreparation.WalkPreparationRepository
@@ -153,7 +155,15 @@ interface RepositoryModule {
     //DBTI
     @Binds
     @Singleton
-    abstract fun bindDbtiRepository(
+    fun bindDbtiRepository(
         dbtiRepositoryImpl: DbtiRepositoryImpl
     ): DbtiRepository
+
+    @Binds
+    @Singleton
+    fun bindReviewRepository(
+        impl: ReviewsRepositoryImpl
+    ) : ReviewsRepository
+
+
 }

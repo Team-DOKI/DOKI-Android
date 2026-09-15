@@ -8,7 +8,6 @@ import coil.disk.DiskCache
 import coil.memory.MemoryCache
 import coil.util.DebugLogger
 import com.kakao.sdk.common.KakaoSdk
-import com.kakao.vectormap.KakaoMapSdk
 import com.naver.maps.map.NaverMapSdk
 import dagger.hilt.android.HiltAndroidApp
 import timber.log.Timber
@@ -19,7 +18,7 @@ import javax.inject.Named
 class PawKeyApplication : Application(), ImageLoaderFactory {
     @Inject
     @Named("kakao.native.key")
-    lateinit var kakaoNativeKey: String // BuildConfig는 컴파일 타임에 생성되는 정적 클래스이기 때문에 Mocking이 불가능 = 테스트 용이성
+    lateinit var kakaoNativeKey: String
 
     override fun onCreate() {
         super.onCreate()
@@ -27,7 +26,6 @@ class PawKeyApplication : Application(), ImageLoaderFactory {
         setDarkMode()
 
         KakaoSdk.init(this, kakaoNativeKey)
-        KakaoMapSdk.init(this, kakaoNativeKey)
         NaverMapSdk.getInstance(this).client =
             NaverMapSdk.NcpKeyClient(BuildConfig.NAVERMAP_CLIENT_ID)
     }

@@ -4,7 +4,7 @@ import com.paw.key.domain.entity.petprofile.PetProfileEntity
 
 data class PetInfoModel(
     val petId: Int = -1,
-    val petImageUrl: String = "",
+    val petImageUrl: String? = "",
     val petName: String = "",
     val petBirthday: String = "",
     val petGender: String = "",

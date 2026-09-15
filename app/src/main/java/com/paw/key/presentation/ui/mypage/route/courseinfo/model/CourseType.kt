@@ -12,12 +12,12 @@ enum class CourseType(val courseType: String) {
 }
 
 data class CourseData(
-    val postId: Int,
-    val location: String,
-    val title: String,
-    val imageUrl: String,
-    val time: String,
-    val date: String,
+    val postId: Int = -1,
+    val location: String = "",
+    val title: String = "",
+    val imageUrl: String = "",
+    val time: String = "",
+    val date: String = "",
     val isLiked: Boolean = false,
     val categoryOptionSummary: List<String> = emptyList(),
 )
@@ -33,21 +33,21 @@ sealed interface CourseInfoSideEffect {
 
 
 fun RoutePostEntity.toUiModel() = CourseData(
-    postId    = postId,
-    location  = regionName,
-    title     = title,
-    imageUrl  = imageUrl,
-    time      = "${durationMinutes}분",
-    date      = date.take(10),
-    isLiked   = isLiked,
+    postId = postId,
+    location = regionName,
+    title = title,
+    imageUrl = imageUrl,
+    time = "${durationMinutes}분",
+    date = date.split("T").first().replace("-", "/"),
+    isLiked = isLiked,
 )
 
 fun ReviewPostEntity.toCourseData() = CourseData(
-    postId                = postId,
-    location              = regionName,
-    title                 = title,
-    imageUrl              = "",
-    time                  = "",
-    date                  = date.take(10),
+    postId = postId,
+    location = regionName,
+    title = title,
+    imageUrl = "",
+    time = "",
+    date = date.split("T").first().replace("-", "/"),
     categoryOptionSummary = categoryOptionSummary,
 )

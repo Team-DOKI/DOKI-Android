@@ -19,11 +19,13 @@ fun NavGraphBuilder.homeNavGraph(
     paddingValues: PaddingValues,
     navigateUp: () -> Unit,
     navigateToCourse: () -> Unit,
+    navigateToDbti: () -> Unit,
 ) {
     composable<Home> {
         HomeRoute(
             paddingValues = paddingValues,
             navigateToCourse = navigateToCourse,
+            navigateToDbti = navigateToDbti
         )
     }
 }

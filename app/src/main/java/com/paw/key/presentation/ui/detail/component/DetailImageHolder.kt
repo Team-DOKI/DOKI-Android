@@ -15,6 +15,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.paw.key.core.designsystem.component.UrlImage
 import com.paw.key.core.designsystem.theme.PawKeyTheme
+import com.paw.key.core.extension.noRippleClickable
 import com.paw.key.presentation.ui.detail.model.WalkImageUiModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -22,7 +23,8 @@ import kotlinx.collections.immutable.persistentListOf
 @Composable
 fun DetailImageHolder(
     imageUrls: ImmutableList<WalkImageUiModel>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClickImage: (Int) -> Unit = {}
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
         val imageWidth = maxWidth * 0.317f
@@ -38,6 +40,11 @@ fun DetailImageHolder(
                     modifier = Modifier
                         .size(imageWidth)
                         .aspectRatio(1f)
+                        .noRippleClickable(
+                            onClick = {
+                                onClickImage(it)
+                            }
+                        )
                         .clip(RoundedCornerShape(4.dp))
                 )
             }

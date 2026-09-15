@@ -1,6 +1,7 @@
 package com.paw.key.data.remote.datasource.posts
 
 import com.paw.key.data.dto.request.posts.PostsDataRequestDto
+import com.paw.key.data.dto.request.posts.PostsEditRequestDto
 import com.paw.key.data.dto.request.posts.PostsFilterRequestDto
 import com.paw.key.data.service.posts.PostsService
 import javax.inject.Inject
@@ -9,6 +10,10 @@ class PostsDataSource @Inject constructor(
     private val service: PostsService
 ) {
     suspend fun postPosts(request: PostsDataRequestDto) = service.postPosts(request)
+
+    suspend fun editPosts(postId: Int, request: PostsEditRequestDto) = service.patchPosts(postId, request)
+
+    suspend fun deletePosts(postId: Int) = service.deletePosts(postId)
 
     suspend fun getCategories() = service.getCategories()
 

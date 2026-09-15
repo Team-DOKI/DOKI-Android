@@ -35,10 +35,6 @@ class CourseInfoViewModel @Inject constructor(
     private val _sideEffect = MutableSharedFlow<CourseInfoSideEffect>()
     val sideEffect = _sideEffect.asSharedFlow()
 
-    init {
-        fetchCourses()
-    }
-
     fun fetchCourses() {
         viewModelScope.launch {
             _state.update { it.copy(courses = UiState.Loading) }

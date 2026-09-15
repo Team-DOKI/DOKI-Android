@@ -10,6 +10,8 @@ data class MyPageState(
 
     val petInfo : PetInfoModel = PetInfoModel(),
     val petTags: List<String> = emptyList(),
+
+    val dbtiType : String = "",
     val walkCount: Int = 0,
     val totalDistance: String = "",
 )

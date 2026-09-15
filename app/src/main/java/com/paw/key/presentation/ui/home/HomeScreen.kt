@@ -29,6 +29,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.paw.key.core.designsystem.component.LoadingScreen
 import com.paw.key.core.designsystem.component.routeitem.RouteItem
 import com.paw.key.core.designsystem.theme.PawKeyTheme
+import com.paw.key.core.extension.noRippleClickable
 import com.paw.key.core.util.UiState
 import com.paw.key.presentation.ui.home.component.HomeBanner
 import com.paw.key.presentation.ui.home.component.HomeEmptyRoute
@@ -43,6 +44,7 @@ import kotlinx.collections.immutable.persistentListOf
 fun HomeRoute(
     paddingValues: PaddingValues,
     navigateToCourse: () -> Unit,
+    navigateToDbti: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -65,6 +67,7 @@ fun HomeRoute(
             HomeScreen(
                 paddingValues = paddingValues,
                 navigateToCourse = navigateToCourse,
+                navigateToDbti = navigateToDbti,
                 state = uiState.data
             )
         }
@@ -75,6 +78,7 @@ fun HomeRoute(
 private fun HomeScreen(
     paddingValues: PaddingValues,
     navigateToCourse: () -> Unit,
+    navigateToDbti: () -> Unit,
     state: HomeState,
 ) {
     val itemWidth = (LocalConfiguration.current.screenWidthDp.dp - 40.dp) / 2.5f
@@ -112,7 +116,12 @@ private fun HomeScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        HomeBanner()
+        HomeBanner(
+            modifier = Modifier
+                .noRippleClickable(
+                    onClick = navigateToDbti
+                )
+        )
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -205,6 +214,7 @@ private fun HomePreview() {
         HomeScreen(
             paddingValues = PaddingValues(),
             navigateToCourse = {},
+            navigateToDbti = {},
             state = HomeState(
                 walkingRecommendedData = persistentListOf()
             )

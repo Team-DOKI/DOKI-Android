@@ -20,6 +20,7 @@ class MypageRepositoryImpl @Inject constructor(
         }
 
     override suspend fun updatePet(
+        petId: Int,
         name: String,
         birth: String,
         gender: String,
@@ -28,6 +29,7 @@ class MypageRepositoryImpl @Inject constructor(
         imageId: Int,
     ): Result<Unit> = suspendRunCatching {
         dataSource.updatePet(
+            petId,
             UpdatePetRequestDto(
                 name       = name,
                 birth      = birth,

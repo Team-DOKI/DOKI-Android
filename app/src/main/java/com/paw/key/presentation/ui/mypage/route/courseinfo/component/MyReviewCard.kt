@@ -1,21 +1,25 @@
 package com.paw.key.presentation.ui.mypage.route.courseinfo.component
 
 import androidx.annotation.DrawableRes
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -24,13 +28,26 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.paw.key.R
+import com.paw.key.core.designsystem.component.SubChip
 import com.paw.key.core.designsystem.theme.PawKeyTheme
+import com.paw.key.presentation.ui.detail.component.FilterChipDivider
+import com.paw.key.presentation.ui.mypage.route.courseinfo.model.CourseData
+import com.paw.key.presentation.ui.mypage.route.courseinfo.util.formatDateTime
 
 @Composable
 fun MyReviewCard(
-    cardTitle: String,
+    course: CourseData,
     modifier: Modifier = Modifier,
 ) {
+    var isExpanded by remember {
+        mutableStateOf(false)
+    }
+
+    val maxVisibleItems = 5
+    val visibleItems = if (isExpanded) course.categoryOptionSummary else course.categoryOptionSummary.take(maxVisibleItems)
+    val hiddenCount = course.categoryOptionSummary.size - maxVisibleItems
+
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -49,7 +66,7 @@ fun MyReviewCard(
         Spacer(modifier = Modifier.height(4.dp))
 
         Text(
-            text = cardTitle,
+            text = course.title,
             color = PawKeyTheme.colors.black,
             style = PawKeyTheme.typography.mainButtonActive
         )
@@ -58,76 +75,40 @@ fun MyReviewCard(
 
         ReviewContent(
             iconRes = R.drawable.ic_mypage_location_mark,
-            content = "강남구 역삼동"
+            content = course.location
         )
         ReviewContent(
             iconRes = R.drawable.ic_mypage_time_mark,
-            content = "만족"
+            content = formatDateTime(course.date)
         )
 
         Spacer(modifier = Modifier.height(18.dp))
 
-        ReviewChip(
-            chipTitle = "차량 적음"
-        )
-
-        Spacer(modifier = Modifier.height(5.dp))
-
-        ReviewAdditionArea(
-            additionEa = "+9"
-        )
-    }
-
-}
-
-@Composable
-private fun ReviewAdditionArea(
-    additionEa: String,
-    modifier: Modifier = Modifier,
-) {
-    Box(
-        modifier = modifier
-            .fillMaxWidth(),
-        contentAlignment = Alignment.Center
-    ) {
-        HorizontalDivider(
-            thickness = 1.5.dp,
-            color = PawKeyTheme.colors.defaultButton
-        )
-
-        Text(
-            text = additionEa,
-            color = PawKeyTheme.colors.defaultMiddle,
-            style = PawKeyTheme.typography.buttonSmall,
+        FlowRow (
             modifier = Modifier
-                .background(
-                    color = PawKeyTheme.colors.defaultButton,
-                    shape = RoundedCornerShape(999.dp)
+                .fillMaxWidth()
+                .animateContentSize(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            visibleItems.forEach { item ->
+                SubChip(
+                    text = item,
+                    isActionChip = true,
                 )
-                .padding(vertical = 4.dp, horizontal = 16.dp)
-        )
+            }
+        }
 
-    }
+        Spacer(modifier = Modifier.height(9.dp))
 
-}
-
-@Composable
-private fun ReviewChip(
-    chipTitle: String,
-    modifier: Modifier = Modifier,
-) {
-    Text(
-        text = chipTitle,
-        color = PawKeyTheme.colors.primary,
-        style = PawKeyTheme.typography.subButtonActive,
-        modifier = modifier
-            .background(
-                color = PawKeyTheme.colors.primary.copy(alpha = 0.05f),
-                shape = RoundedCornerShape(8.dp)
+        if (!isExpanded && hiddenCount > 0) {
+            FilterChipDivider(
+                hiddenCount = hiddenCount,
+                onClick = { isExpanded = !isExpanded },
+                modifier = Modifier.padding(horizontal = 16.dp)
             )
-            .padding(8.dp)
-    )
-
+        }
+    }
 }
 
 @Composable
@@ -162,7 +143,7 @@ private fun ReviewContent(
 private fun PreviewMyReviewCard() {
     PawKeyTheme {
         MyReviewCard(
-            cardTitle = "단지와의 룰루랄라"
+            course = CourseData()
         )
     }
 }

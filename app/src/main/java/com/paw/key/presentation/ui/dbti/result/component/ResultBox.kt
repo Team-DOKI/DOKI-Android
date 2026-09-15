@@ -22,16 +22,11 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.paw.key.core.designsystem.theme.PawKeyTheme
+import com.paw.key.presentation.ui.dbti.result.model.TraitAnalysis
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 
-// TraitAnalysis 데이터 클래스 정의
-data class TraitAnalysis(
-    val leftLabel: String,
-    val rightLabel: String,
-    val dominantSide: String,
-    val score: Int
-)
+
 
 @Composable
 fun ResultBox(

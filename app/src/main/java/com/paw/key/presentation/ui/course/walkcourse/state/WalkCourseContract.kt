@@ -9,6 +9,7 @@ import com.paw.key.presentation.ui.course.walkcourse.model.RecordingState
 import com.paw.key.presentation.ui.course.walkcourse.model.StepCounterState
 import com.paw.key.presentation.ui.course.walkcourse.util.formatDistance
 import com.paw.key.presentation.ui.course.walkcourse.util.formatTime
+import java.util.concurrent.TimeUnit
 
 @Immutable
 data class WalkCourseState(
@@ -17,7 +18,8 @@ data class WalkCourseState(
     val stepCounterState: StepCounterState = StepCounterState(),
     val totalTimeMillis: Long = 0L,
     val isStopTracking: Boolean = false, // true는 stop됨, false는 다시 시작
-    val snapshotUri: String? = null
+    val snapshotUri: String? = null,
+    val isShared: Boolean = false,
 ) {
     val formattedTime: String
         get() = formatTime(this.totalTimeMillis)
@@ -27,7 +29,11 @@ data class WalkCourseState(
 
     fun toEntity() = WalkFinish(
         distance = this.mapState.totalDistance.toInt(),
-        duration = this.totalTimeMillis.toInt(),
+        duration = if (TimeUnit.MILLISECONDS.toMinutes(this.totalTimeMillis).toInt() > 0) {
+            TimeUnit.MILLISECONDS.toMinutes(this.totalTimeMillis).toInt()
+        } else {
+            1
+        },
         stepCount = this.stepCounterState.sessionSteps.toInt(),
         endedAt = this.recordingState.endedAt,
     )
@@ -39,7 +45,7 @@ sealed interface WalkCourseSideEffect {
     data object NavigateUp: WalkCourseSideEffect
     data class NavigateNext(val regionId: Int): WalkCourseSideEffect
 
-    data object NavigateReview: WalkCourseSideEffect
+    data class NavigateSharedReview(val routeId: Int, val isShared: Boolean, val postId: Int, val userId: Int): WalkCourseSideEffect
     data class NavigateComplete(val routeId: Int, val routeImageId: Int? = null): WalkCourseSideEffect
 }
 

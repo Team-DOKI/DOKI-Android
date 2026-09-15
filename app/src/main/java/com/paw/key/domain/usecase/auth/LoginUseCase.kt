@@ -21,6 +21,9 @@ class LoginUseCase @Inject constructor(
                     refreshToken = loginResponse.refreshToken
                 )
 
+                localStorageRepository.savePetId(loginResponse.petId)
+                localStorageRepository.saveUserId(loginResponse.userId)
+
                 loginResponse.isNewUser
             }
     }
@@ -33,6 +36,8 @@ class LoginUseCase @Inject constructor(
                 val response = authRepository.loginKakao(idToken, deviceId).getOrThrow()
 
                 localStorageRepository.saveTokens(response.accessToken, response.refreshToken)
+                localStorageRepository.savePetId(response.petId)
+                localStorageRepository.saveUserId(response.userId)
 
                 response.isNewUser
             }

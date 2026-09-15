@@ -20,6 +20,7 @@ fun NavGraphBuilder.splashNavGraph(
     paddingValues: PaddingValues,
     navigateLogin: () -> Unit,
     navigateToHome: () -> Unit,
+    navigateToSignUp: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     composable<Splash> {
@@ -27,6 +28,7 @@ fun NavGraphBuilder.splashNavGraph(
             paddingValues = paddingValues,
             navigateLogin = navigateLogin,
             navigateToHome = navigateToHome,
+            navigateToSignUp = navigateToSignUp,
             modifier = modifier
         )
     }

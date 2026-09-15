@@ -21,6 +21,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.paw.key.core.designsystem.component.PawkeyButton
 import com.paw.key.core.designsystem.component.TopBar
 import com.paw.key.core.designsystem.theme.PawKeyTheme
+import com.paw.key.core.util.DateDataVisualTransformation
 import com.paw.key.presentation.ui.mypage.route.userinfo.component.UserEditTextField
 import com.paw.key.presentation.ui.mypage.route.userinfo.component.UserGenderButton
 import com.paw.key.presentation.ui.mypage.route.userinfo.component.UserProfileItem
@@ -110,6 +111,7 @@ private fun UserProfileScreen(
                     onValueChange = onBirthChange,
                     placeholder = "YYYY-MM-DD",
                     modifier = Modifier.fillMaxWidth(),
+                    visualTransformation = DateDataVisualTransformation(),
                     enabled = true,
                     singleLine = true
                 )

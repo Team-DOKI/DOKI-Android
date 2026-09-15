@@ -1,6 +1,7 @@
 package com.paw.key.presentation.ui.login
 
 import android.app.Activity
+import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -21,7 +22,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -65,6 +65,9 @@ fun LoginRoute(
                 when (sideEffect) {
                     is LoginSideEffect.NavigateToHome -> navigateHome()
                     is LoginSideEffect.NavigateToSignUp -> navigateSignUp()
+                    is LoginSideEffect.ShowSnackBar -> {
+                        Toast.makeText(context, sideEffect.message, Toast.LENGTH_SHORT).show()
+                    }
                     else -> {}
                 }
 

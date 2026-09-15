@@ -19,7 +19,7 @@ class PostCreateUserUseCase @Inject constructor(
         userInfoEntity: UserInfoEntity,
         petImageUri: String?
     ): Result<Unit> = suspendRunCatching {
-        val finalImageId: Int = if (petImageUri != null) {
+        val finalImageId: Int? = if (petImageUri != null) {
             val presignedResult = imageRepository.presignedImage(
                 presignedEntity = ImagePresignedEntity(
                     domain = ImageDomainType.PET_PROFILE,
@@ -41,7 +41,7 @@ class PostCreateUserUseCase @Inject constructor(
             registerImage.imageId
         } else {
             Timber.e("petImageUri is null")
-            -1
+            null
         }
 
         val finalPetInfo = userInfoEntity.pet.copy(

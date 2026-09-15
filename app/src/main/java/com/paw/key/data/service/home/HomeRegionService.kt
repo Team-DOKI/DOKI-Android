@@ -6,22 +6,20 @@ import com.paw.key.data.dto.response.home.HomeInfoResponseDto
 import com.paw.key.data.dto.response.home.HomeRouteResponseDto
 import com.paw.key.data.dto.response.home.HomeWeatherResponseDto
 import com.paw.key.data.dto.response.home.RegionCurrentResponseDto
+import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
-import retrofit2.http.Header
 import retrofit2.http.PATCH
 
 
 interface HomeRegionService {
     @PATCH("users/me/regions")
     suspend fun patchRegion(
-        @Header("X-USER-ID") userId: Int,
         @Body request: HomeRegionRequest,
-    ): BaseResponse<Unit?>
+    ): Response<Unit>
 
     @GET("regions/current")
     suspend fun regionCurrent(
-        @Header("X-USER-ID") userId: Int
     ): BaseResponse<RegionCurrentResponseDto>
 
     @GET("home/info")

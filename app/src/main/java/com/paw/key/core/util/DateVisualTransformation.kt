@@ -42,3 +42,35 @@ class DateVisualTransformation : VisualTransformation {
         return TransformedText(AnnotatedString(formattedText), offsetMapping)
     }
 }
+
+class DateDataVisualTransformation : VisualTransformation {
+    override fun filter(text: AnnotatedString): TransformedText {
+        // 숫자만 들어온다고 가정하고, 8자리로 자름
+        val trimmed = text.text.take(8)
+
+        // 화면에 보여줄 하이픈이 포함된 문자열 생성
+        val formatted = when {
+            trimmed.length <= 4 -> trimmed
+            trimmed.length <= 6 -> "${trimmed.substring(0, 4)}-${trimmed.substring(4)}"
+            else -> "${trimmed.substring(0, 4)}-${trimmed.substring(4, 6)}-${trimmed.substring(6)}"
+        }
+
+        val offsetMapping = object : OffsetMapping {
+            override fun originalToTransformed(offset: Int): Int {
+                if (offset <= 4) return offset
+                if (offset <= 6) return offset + 1
+                if (offset <= 8) return offset + 2
+                return 10
+            }
+
+            override fun transformedToOriginal(offset: Int): Int {
+                if (offset <= 4) return offset
+                if (offset <= 7) return offset - 1
+                if (offset <= 10) return offset - 2
+                return 8
+            }
+        }
+
+        return TransformedText(AnnotatedString(formatted), offsetMapping)
+    }
+}

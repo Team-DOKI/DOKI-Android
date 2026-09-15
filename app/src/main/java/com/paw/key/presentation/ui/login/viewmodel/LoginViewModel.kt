@@ -35,10 +35,12 @@ class LoginViewModel @Inject constructor(
         _state.update { it.copy(isLoading = true) }
         viewModelScope.launch {
             loginUseCase.invokeGoogleLogin(context)
-                .onSuccess {
+                .onSuccess { isNewUser ->
                     localStorageRepository.saveUserProvider("GOOGLE")
 
-                    if (it) {
+                    val petId = localStorageRepository.getPetId()
+
+                    if (isNewUser || petId == -1) {
                         _sideEffect.emit(LoginSideEffect.NavigateToSignUp)
                     } else {
                         _sideEffect.emit(LoginSideEffect.NavigateToHome)
@@ -47,6 +49,8 @@ class LoginViewModel @Inject constructor(
                     _state.update { it.copy(isLoading = false) }
                 }
                 .onFailure { e ->
+                    _state.update { it.copy(isLoading = false) }
+                    _sideEffect.emit(LoginSideEffect.ShowSnackBar("로그인에 실패했습니다\n잠시 후에 다시 시도해주세요"))
                     Timber.e(e, "Google sign-in failed")
                 }
         }
@@ -58,10 +62,12 @@ class LoginViewModel @Inject constructor(
         _state.update { it.copy(isLoading = true) }
         viewModelScope.launch {
             loginUseCase.invokeKakaoLogin(context)
-                .onSuccess {
+                .onSuccess { isNewUser ->
                     localStorageRepository.saveUserProvider("KAKAO")
                     // isNewUser가 true이면이니 signup false는 home
-                    if (it) {
+                    val petId = localStorageRepository.getPetId()
+
+                    if (isNewUser || petId == -1) {
                         _sideEffect.emit(LoginSideEffect.NavigateToSignUp)
                     } else {
                         _sideEffect.emit(LoginSideEffect.NavigateToHome)
@@ -70,6 +76,8 @@ class LoginViewModel @Inject constructor(
                     _state.update { it.copy(isLoading = false) }
                 }
                 .onFailure { e ->
+                    _state.update { it.copy(isLoading = false) }
+                    _sideEffect.emit(LoginSideEffect.ShowSnackBar("로그인에 실패했습니다\n잠시 후에 다시 시도해주세요"))
                     Timber.e(e, "Kakao sign-in failed")
                 }
         }

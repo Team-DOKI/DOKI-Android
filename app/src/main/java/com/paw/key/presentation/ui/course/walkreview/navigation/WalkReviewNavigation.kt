@@ -12,20 +12,30 @@ import kotlinx.serialization.Serializable
 fun NavController.navigateWalkReview(
     navOptions: NavOptions?,
     routeId: Int? = null,
-    routeImageId: Int? = null
+    routeImageId: Int? = null,
+    isShared: Boolean = false,
+    postId: Int? = null,
+    userId: Int? = null
 ) {
-    navigate(WalkReview(routeId, routeImageId), navOptions)
+    navigate(WalkReview(
+        routeId,
+        routeImageId,
+        isShared = isShared,
+        postId,
+        userId
+    ), navOptions)
 }
 
 fun NavGraphBuilder.walkReviewNavGraph(
     paddingValues: PaddingValues,
     navigateHome: () -> Unit,
-    navigateWalkDetail: () -> Unit,
+    navigateWalkDetail: (postId: Int, routeId: Int) -> Unit,
 ) {
     composable<WalkReview> {
         WalkReviewRoute(
             paddingValues = paddingValues,
             navigateHome = navigateHome,
+            navigateUp = navigateHome,
             navigateWalkDetail = navigateWalkDetail
         )
     }
@@ -34,5 +44,8 @@ fun NavGraphBuilder.walkReviewNavGraph(
 @Serializable
 data class WalkReview(
     val routeId: Int? = null,
-    val routeImageId: Int? = null
+    val routeImageId: Int? = null,
+    val isShared: Boolean = false,
+    val postId: Int? = null,
+    val userId: Int? = null
 ) : Route

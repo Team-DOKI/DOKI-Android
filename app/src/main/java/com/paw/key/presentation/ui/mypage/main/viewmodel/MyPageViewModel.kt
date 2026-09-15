@@ -3,6 +3,7 @@ package com.paw.key.presentation.ui.mypage.main.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.paw.key.core.app.AppRestarter
+import com.paw.key.domain.repository.DBTI.DbtiRepository
 import com.paw.key.domain.repository.localstorage.LocalStorageRepository
 import com.paw.key.domain.repository.user.UserRepository
 import com.paw.key.presentation.ui.mypage.main.model.MyPageSideEffect
@@ -23,6 +24,7 @@ import javax.inject.Inject
 class MyPageViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val localRepository: LocalStorageRepository,
+    private val dbtiRepository: DbtiRepository,
     private val appRestarter: AppRestarter
 ) : ViewModel() {
     private val _state = MutableStateFlow(MyPageState())
@@ -32,10 +34,6 @@ class MyPageViewModel @Inject constructor(
     private val _sideEffect = MutableSharedFlow<MyPageSideEffect>()
     val sideEffect = _sideEffect.asSharedFlow()
 
-    init {
-        getUserProfiles()
-        getPetProfiles()
-    }
 
     fun getUserProfiles() {
         Timber.e("getUserProfiles")
@@ -60,19 +58,40 @@ class MyPageViewModel @Inject constructor(
         viewModelScope.launch {
             val petId = localRepository.getPetId()
 
-            userRepository.getPetProfiles(petId)
-                .onSuccess { result ->
-                    _state.update { currentState ->
-                        currentState.copy(
-                            petInfo = result.toUiModel()
-                        )
+            launch {
+                userRepository.getPetProfiles(petId)
+                    .onSuccess { result ->
+                        _state.update { currentState ->
+                            currentState.copy(
+                                petInfo = result.toUiModel()
+                            )
+                        }
+                        Timber.e("getPetProfiles: $result")
+                        Timber.e("getPetProfiles: ${_state.value.petInfo}")
+                    }.onFailure {
+                        Timber.e("getPetProfiles: $it")
+                        _sideEffect.emit(MyPageSideEffect.ShowSnackBar("펫 프로필 불러오기 실패"))
                     }
-                    Timber.e("getPetProfiles: $result")
-                    Timber.e("getPetProfiles: ${_state.value.petInfo}")
-                }.onFailure {
-                    Timber.e("getPetProfiles: $it")
-                    _sideEffect.emit(MyPageSideEffect.ShowSnackBar("펫 프로필 불러오기 실패"))
-                }
+            }
+
+            launch {
+                dbtiRepository.getResult(petId = petId.toLong())
+                    .onSuccess { result ->
+                        _state.update { currentState ->
+                            currentState.copy(
+                                dbtiType = result.type,
+                                petInfo = currentState.petInfo.copy(
+                                    petDbtiName = result.name,
+                                    petDbtiDescription = result.description
+                                )
+                            )
+                        }
+                        Timber.e("getPetProfiles: $result")
+                    }
+                    .onFailure {
+                        Timber.e("getPetProfiles: $it")
+                    }
+            }
         }
     }
 

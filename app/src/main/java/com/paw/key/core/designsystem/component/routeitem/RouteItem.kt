@@ -46,6 +46,7 @@ fun RouteItem(
 ) {
     Column(
         modifier = modifier
+            .noRippleClickable(onClick = onClick)
     ) {
         Box(
             modifier = Modifier

@@ -26,6 +26,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -36,18 +37,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.keepScreenOn
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.flowWithLifecycle
 import com.naver.maps.geometry.LatLng
 import com.naver.maps.geometry.LatLngBounds
 import com.naver.maps.map.CameraUpdate
+import com.naver.maps.map.compose.ArrowheadPathOverlay
 import com.naver.maps.map.compose.CameraPositionState
 import com.naver.maps.map.compose.CameraUpdateReason
 import com.naver.maps.map.compose.ExperimentalNaverMapApi
@@ -76,9 +81,9 @@ import com.paw.key.presentation.ui.course.util.rememberStepCounter
 import com.paw.key.presentation.ui.course.walkcourse.component.WalkRecordItem
 import com.paw.key.presentation.ui.course.walkcourse.state.WalkCourseSideEffect
 import com.paw.key.presentation.ui.course.walkcourse.state.WalkCourseState
-import com.paw.key.presentation.ui.course.walkcourse.viewmodel.WalkCourseViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.coroutines.flow.drop
+import timber.log.Timber
 import java.util.Locale
 
 private val REQUIRED_PERMISSIONS = mutableListOf(
@@ -95,7 +100,7 @@ private val REQUIRED_PERMISSIONS = mutableListOf(
 fun WalkCourseRoute(
     paddingValues: PaddingValues,
     navigateUp: () -> Unit = {},
-    navigateReview: () -> Unit = {},
+    navigateSharedReview: (routeId: Int, isShared: Boolean, postId: Int, userId: Int) -> Unit = {_, _,_,_ -> },
     navigateWalkComplete: (routeId: Int, routeImageId: Int) -> Unit = {_, _ ->},
     viewModel: WalkCourseViewModel = hiltViewModel(),
 ) {
@@ -125,7 +130,7 @@ fun WalkCourseRoute(
         viewModel.sideEffect.flowWithLifecycle(lifecycleOwner.lifecycle)
             .collect { sideEffect ->
                 when (sideEffect) {
-                    is WalkCourseSideEffect.NavigateNext -> navigateReview()
+                    is WalkCourseSideEffect.NavigateNext -> {}
 
                     WalkCourseSideEffect.NavigateUp -> navigateUp()
 
@@ -133,7 +138,7 @@ fun WalkCourseRoute(
                         Toast.makeText(context, sideEffect.message, Toast.LENGTH_SHORT).show()
                     }
 
-                    WalkCourseSideEffect.NavigateReview -> navigateReview()
+                    is WalkCourseSideEffect.NavigateSharedReview -> navigateSharedReview(sideEffect.routeId, sideEffect.isShared, sideEffect.postId, sideEffect.userId)
 
                     is WalkCourseSideEffect.NavigateComplete -> navigateWalkComplete(sideEffect.routeId, sideEffect.routeImageId ?: -1)
 
@@ -171,11 +176,21 @@ fun WalkCourseRoute(
         }
     }
 
-    LaunchedEffect(state.mapState.poiPoints.size) {
-        if (state.mapState.poiPoints.size >= 2) {
+    LaunchedEffect(state.mapState.poiPoints.size, state.isShared) {
+        if (state.isShared && state.mapState.poiPoints.size >= 2) {
+            Timber.e("course isShared")
             val bounds = LatLngBounds.from(state.mapState.poiPoints)
             cameraPositionState.animate(
-                CameraUpdate.fitBounds(bounds, 300)
+                update = CameraUpdate.fitBounds(bounds, 250),
+                durationMs = 1000
+            )
+        }
+
+        else if (!state.isShared && state.mapState.poiPoints.size >= 2) {
+            Timber.e("course not isShared")
+            val bounds = LatLngBounds.from(state.mapState.poiPoints)
+            cameraPositionState.animate(
+                update = CameraUpdate.fitBounds(bounds, 250)
             )
         }
     }
@@ -198,6 +213,23 @@ fun WalkCourseRoute(
                     viewModel.disableTracking()
                 }
             }
+    }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            // ON_DESTROY: 화면을 뒤로가기로 벗어나거나 앱 프로세스가 종료될 때
+            if (event == Lifecycle.Event.ON_DESTROY) {
+                if (state.recordingState.isRecording && !state.isStopTracking) {
+                    viewModel.stopTracking(snapshotUri = null)
+                }
+            }
+        }
+
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
     }
 
     when (state.mapState.initialState) {
@@ -268,6 +300,9 @@ fun WalkCourseScreen(
         modifier = Modifier
             .fillMaxSize()
             .padding(paddingValues)
+            .then(
+                if (isRecording && !state.isStopTracking) Modifier.keepScreenOn() else Modifier
+            )
     ) {
         NaverMap(
             modifier = Modifier
@@ -290,8 +325,8 @@ fun WalkCourseScreen(
                 LocationOverlay(
                     position = currentLocation,
                     icon = OverlayImage.fromResource(R.drawable.user_poi),
-                    iconWidth = 36,
-                    iconHeight = 36,
+                    iconWidth = 72,
+                    iconHeight = 72,
                 )
             }
 
@@ -303,6 +338,7 @@ fun WalkCourseScreen(
                     outlineWidth = 0.dp
                 )
             }
+            ArrowheadPathOverlay()
         }
 
         Column(

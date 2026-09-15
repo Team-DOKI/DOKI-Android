@@ -1,11 +1,11 @@
-package com.paw.key.data.repositoryimpl
+package com.paw.key.data.repositoryimpl.DBTI
 
-import com.paw.key.data.remote.datasource.DbtiDataSource
-import com.paw.key.domain.entity.DBTI.DbtiAnalysisEntity
-import com.paw.key.domain.entity.DBTI.DbtiResultEntity
+import com.paw.key.data.remote.datasource.DBTI.DbtiDataSource
+import com.paw.key.domain.entity.dbti.DbtiAnalysisEntity
+import com.paw.key.domain.entity.dbti.DbtiResultEntity
 import com.paw.key.domain.entity.dbti.DbtiOptionEntity
 import com.paw.key.domain.entity.dbti.DbtiQuestionEntity
-import com.paw.key.domain.repository.DbtiRepository
+import com.paw.key.domain.repository.DBTI.DbtiRepository
 import javax.inject.Inject
 
 class DbtiRepositoryImpl @Inject constructor(
@@ -14,7 +14,7 @@ class DbtiRepositoryImpl @Inject constructor(
 
     override suspend fun getQuestions(): Result<List<DbtiQuestionEntity>> {
         return runCatching {
-            val response = dbtiDataSource.getQuestions("YOUR_TOKEN") // TODO: 실제 토큰으로 변경
+            val response = dbtiDataSource.getQuestions()
             response.data.questions.map { questionDto ->
                 DbtiQuestionEntity(
                     id = questionDto.id,
@@ -41,7 +41,6 @@ class DbtiRepositoryImpl @Inject constructor(
         return runCatching {
             val response = dbtiDataSource.submitResult(
                 petId = petId,
-                token = "YOUR_TOKEN", // TODO: 실제 토큰으로 변경
                 optionIds = optionIds
             )
 
@@ -68,7 +67,6 @@ class DbtiRepositoryImpl @Inject constructor(
         return runCatching {
             val response = dbtiDataSource.getResult(
                 petId = petId,
-                token = "YOUR_TOKEN" // TODO: 실제 토큰으로 변경
             )
 
             DbtiResultEntity(

@@ -3,6 +3,7 @@ package com.paw.key.data.repositoryimpl.posts
 
 import com.paw.key.core.util.suspendRunCatching
 import com.paw.key.data.dto.request.posts.toDto
+import com.paw.key.data.dto.request.posts.toEditDto
 import com.paw.key.data.remote.datasource.posts.PostsDataSource
 import com.paw.key.domain.entity.posts.FilterSelectedItemEntity
 import com.paw.key.domain.entity.posts.LikeEntity
@@ -24,6 +25,17 @@ class PostsRepositoryImpl @Inject constructor(
         postsInfo: PostsInfoEntity
     ): Result<PostsResultEntity> = suspendRunCatching{
         dataSource.postPosts(postsInfo.toDto()).data.toEntity()
+    }
+
+    override suspend fun editPosts(
+        postId: Int,
+        postsInfo: PostsInfoEntity
+    ) : Result<PostsResultEntity> = suspendRunCatching{
+        dataSource.editPosts(postId, postsInfo.toEditDto()).data.toEntity()
+    }
+
+    override suspend fun deletePosts(postId: Int) : Result<Unit> = suspendRunCatching{
+        dataSource.deletePosts(postId)
     }
 
     override suspend fun getPostsDetail(postId: Int): Result<PostsDetailEntity> = suspendRunCatching {

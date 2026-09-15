@@ -6,7 +6,7 @@ import javax.inject.Inject
 class RegionCurrentDataSource @Inject constructor(
     private val service: HomeRegionService
 ) {
-    suspend fun regionCurrent(userId: Int) =
-        service.regionCurrent(userId)
+    suspend fun regionCurrent() =
+        service.regionCurrent()
 }
 

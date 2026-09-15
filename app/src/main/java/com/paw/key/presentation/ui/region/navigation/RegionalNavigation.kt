@@ -19,8 +19,7 @@ fun NavController.navigateRegional(
 fun NavGraphBuilder.regionalNavGraph(
     paddingValues: PaddingValues,
     navigateUp: () -> Unit,
-    navigateNext: () -> Unit,
-    navigateDbtiStart: () -> Unit,
+    navigateNext: () -> Unit, // 마이페이지로
     snackBarHostState: SnackbarHostState,
 ) {
     composable<Regional> {
@@ -29,8 +28,6 @@ fun NavGraphBuilder.regionalNavGraph(
             snackBarHostState = snackBarHostState,
             navigateUp = navigateUp,
             navigateNext = navigateNext,
-            navigateDbtiStart = navigateDbtiStart,
-            modifier = modifier
         )
     }
 }

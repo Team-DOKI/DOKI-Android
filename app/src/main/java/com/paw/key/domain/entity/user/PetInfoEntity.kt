@@ -6,7 +6,7 @@ data class PetInfoEntity(
     val birth: String,
     val isNeutered: Boolean,
     val breedId: Int,
-    val imageId: Int
+    val imageId: Int?
 )
 
 data class PetBreedsEntity(

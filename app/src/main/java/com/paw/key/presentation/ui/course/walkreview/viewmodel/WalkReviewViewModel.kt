@@ -11,8 +11,11 @@ import com.paw.key.domain.entity.posts.CategoryOptionEntity
 import com.paw.key.domain.entity.posts.PostsInfoEntity
 import com.paw.key.domain.repository.image.ImageRepository
 import com.paw.key.domain.repository.posts.PostsRepository
+import com.paw.key.domain.repository.reviews.ReviewsRepository
 import com.paw.key.presentation.ui.community.model.FilterCategoryUiModel
 import com.paw.key.presentation.ui.community.model.toUiModel
+import com.paw.key.presentation.ui.course.walkreview.model.SelectedReviewSetUiModel
+import com.paw.key.presentation.ui.course.walkreview.model.toEntity
 import com.paw.key.presentation.ui.course.walkreview.model.toUiModel
 import com.paw.key.presentation.ui.course.walkreview.navigation.WalkReview
 import com.paw.key.presentation.ui.course.walkreview.state.WalkReviewState
@@ -28,12 +31,21 @@ import javax.inject.Inject
 class WalkReviewViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val postsRepository: PostsRepository,
-    private val imageRepository: ImageRepository
+    private val imageRepository: ImageRepository,
+    private val reviewsRepository: ReviewsRepository,
 ) : ViewModel() {
     private val routeId = savedStateHandle.toRoute<WalkReview>().routeId
     private val routeImageId = savedStateHandle.toRoute<WalkReview>().routeImageId
 
-    private val _state = MutableStateFlow(WalkReviewState())
+    private val isShared = savedStateHandle.toRoute<WalkReview>().isShared
+    private val postId = savedStateHandle.toRoute<WalkReview>().postId
+    private val userId = savedStateHandle.toRoute<WalkReview>().userId
+
+    private val _state = MutableStateFlow(
+        WalkReviewState(
+            isShared = this.isShared
+        )
+    )
     val state = _state.asStateFlow()
 
     init {
@@ -41,6 +53,10 @@ class WalkReviewViewModel @Inject constructor(
 
         if (routeId != null) {
             fetchRouteSummary(routeId)
+        }
+
+        if (isShared) {
+            fetchReviews()
         }
     }
 
@@ -151,10 +167,13 @@ class WalkReviewViewModel @Inject constructor(
                     imageUrls = uploadedWalkImageIds
                 )
 
-                postsRepository.postPosts(postsInfo).onSuccess {
+                postsRepository.postPosts(postsInfo).onSuccess { result ->
                     Timber.d("게시물 등록 성공")
                     _state.update {
-                        it.copy(isComplete = true)
+                        it.copy(
+                            isComplete = true,
+                            completePostsUiModel = result.toUiModel()
+                        )
                     }
                 }.onFailure { e ->
                     Timber.e(e, "게시물 등록 실패 (API 오류)")
@@ -167,10 +186,66 @@ class WalkReviewViewModel @Inject constructor(
     }
 
     fun onFilterClick(optionId: Int, category: FilterCategoryUiModel) {
-        _state.update {
-            it.copy(
-                selectedOptionIds = it.getUpdatedOptionIds(optionId, category)
-            )
+        _state.update { currentState ->
+            val updatedOptionIdsMap = currentState.getUpdatedOptionIds(optionId, category)
+
+            if (currentState.isShared) {
+                val updatedSelectedSets = updatedOptionIdsMap.map { (catId, optIds) ->
+                    SelectedReviewSetUiModel(
+                        reviewCategoryId = catId,
+                        selectedReviewOptionIds = optIds
+                    )
+                }
+
+                currentState.copy(
+                    selectedOptionIds = updatedOptionIdsMap, // UI용 유지
+                    sharedReviewHeader = currentState.sharedReviewHeader.copy(
+                        selectedReviewSets = updatedSelectedSets // 전송용 동기화
+                    )
+                )
+            } else {
+                // 공유 상태가 아니라면 Map만 업데이트
+                currentState.copy(
+                    selectedOptionIds = updatedOptionIdsMap
+                )
+            }
+        }
+    }
+
+
+    fun fetchReviews() {
+        viewModelScope.launch {
+            reviewsRepository.getReviewHeader(postId = postId ?: -1)
+                .onSuccess { result ->
+                    _state.update {
+                        it.copy(
+                            sharedReviewHeader = result.toUiModel(
+                                currentRouteId = routeId ?: -1,
+                            )
+                        )
+                    }
+                }
+                .onFailure(Timber::e)
+        }
+    }
+
+    fun completeSharedReview() {
+        val currentState = _state.value
+        viewModelScope.launch {
+            try {
+                reviewsRepository.postReview(currentState.sharedReviewHeader.toEntity(), userId ?: -1)
+                    .onSuccess {
+                        Timber.d("공유 리뷰 등록 성공")
+                        _state.update {
+                            it.copy(isComplete = true)
+                        }
+                    }.onFailure { e ->
+                        Timber.e(e, "공유 리뷰 등록 실패 (API 오류)")
+                    }
+
+            } catch (e: Exception) {
+                Timber.e(e, "공유 리뷰 등록 전체 프로세스 중 에러 발생")
+            }
         }
     }
 }

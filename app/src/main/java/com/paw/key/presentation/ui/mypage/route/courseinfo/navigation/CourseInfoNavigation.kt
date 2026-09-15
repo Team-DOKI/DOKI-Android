@@ -19,12 +19,14 @@ fun NavController.navigateToCourseInfo(
 
 fun NavGraphBuilder.courseInfoNavGraph(
     navigateUp: () -> Unit,
+    navigateToDetail: (Int) -> Unit,
 ) {
     composable<CourseInfoNavRoute> { backStackEntry ->
         val route = backStackEntry.toRoute<CourseInfoNavRoute>()
         CourseInfoRoute(
             navigateUp = navigateUp,
             courseType = route.courseType,
+            navigateToDetail = navigateToDetail
         )
     }
 }

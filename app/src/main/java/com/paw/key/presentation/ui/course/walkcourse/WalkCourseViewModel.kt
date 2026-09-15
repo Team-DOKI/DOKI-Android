@@ -1,4 +1,4 @@
-package com.paw.key.presentation.ui.course.walkcourse.viewmodel
+package com.paw.key.presentation.ui.course.walkcourse
 
 import android.location.Location
 import androidx.lifecycle.SavedStateHandle
@@ -20,6 +20,7 @@ import com.paw.key.presentation.ui.course.walkcourse.state.WalkCourseSideEffect
 import com.paw.key.presentation.ui.course.walkcourse.state.WalkCourseState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,7 +30,9 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import timber.log.Timber
+import java.time.Instant
 import java.time.LocalDateTime
 import javax.inject.Inject
 
@@ -47,6 +50,8 @@ class WalkCourseViewModel @Inject constructor(
     // 일반용 routeId => Int
     private val infoRouteId = savedStateHandle.toRoute<WalkCourse>().infoRouteId
     private val isShared = savedStateHandle.toRoute<WalkCourse>().isShared
+    private val postId = savedStateHandle.toRoute<WalkCourse>().postId
+    private val userId = savedStateHandle.toRoute<WalkCourse>().userId
 
     private val _state = MutableStateFlow(WalkCourseState())
     val state: StateFlow<WalkCourseState> = _state.asStateFlow()
@@ -68,6 +73,11 @@ class WalkCourseViewModel @Inject constructor(
 
     fun fetchWalkGeometry() {
         viewModelScope.launch {
+            _state.update {
+                it.copy(
+                    isShared = true
+                )
+            }
             getWalkGeometryUseCase(infoRouteId ?: -1)
                 .onSuccess { result ->
                     _state.update { currentState ->
@@ -122,7 +132,7 @@ class WalkCourseViewModel @Inject constructor(
         _state.update { currentState ->
             val newRecordingState = currentState.recordingState.copy(
                 isRecording = false,
-                endedAt = LocalDateTime.now().toString()
+                endedAt = Instant.now().toString()
             )
 
             currentState.copy(
@@ -221,7 +231,7 @@ class WalkCourseViewModel @Inject constructor(
 
         val currentTimestamp = (System.currentTimeMillis() / 1000).toInt()
         val walkPointEntity = currentLocation.toEntity(
-            routeId = routeId,
+            routeId = routeId!!,
             timestamp = currentTimestamp
         )
 
@@ -229,67 +239,82 @@ class WalkCourseViewModel @Inject constructor(
         viewModelScope.launch {
             walkRepository.pointWalk(walkPointEntity)
                 .onFailure { throwable ->
-                    Timber.e(throwable)
+                    Timber.Forest.e(throwable)
                 }
         }
     }
 
     fun stopTracking(snapshotUri: String?) {
         viewModelScope.launch {
-            _state.update { currentState ->
-                currentState.copy(
-                    recordingState = currentState.recordingState.copy(
-                        isRecording = false,
-                        endedAt = LocalDateTime.now().toString()
-                    ),
-                    snapshotUri = snapshotUri
-                )
-            }
-
-            if (isShared) {
-                _state.update { it.copy(isStopTracking = true) }
-                _sideEffect.emit(WalkCourseSideEffect.NavigateComplete(infoRouteId ?:-1, null))
-                return@launch
-            }
-
-            val currentState = _state.value
-
-            val routeImage = currentState.snapshotUri?.let { uri ->
-                val presignedResult = imageRepository.presignedImage(
-                    ImagePresignedEntity(
-                        domain = ImageDomainType.ROUTE,
-                        contentType = "image/webp"
+            withContext(NonCancellable) {
+                _state.update { currentState ->
+                    currentState.copy(
+                        recordingState = currentState.recordingState.copy(
+                            isRecording = false,
+                            endedAt = Instant.now().toString()
+                        ),
+                        snapshotUri = snapshotUri
                     )
-                ).getOrElse {
-                    _sideEffect.emit(WalkCourseSideEffect.ShowSnackBar("이미지 업로드 준비 실패"))
-                    return@launch
                 }
 
-                imageRepository.uploadS3(
-                    presignedUrl = presignedResult.uploadUrl,
-                    uriString = uri
-                ).getOrElse {
-                    _sideEffect.emit(WalkCourseSideEffect.ShowSnackBar("이미지 업로드 실패"))
-                    return@launch
+                if (isShared) {
+                    _state.update { it.copy(isStopTracking = true) }
+                    _sideEffect.emit(
+                        WalkCourseSideEffect.NavigateSharedReview(
+                            infoRouteId ?: -1,
+                            true,
+                            postId ?: -1,
+                            userId ?: -1
+                        )
+                    )
+                    return@withContext
                 }
 
-                val registerImage = imageRepository.registerImage(
-                    uriString = "${presignedResult.imageUrl}#${uri}",
-                    domainType = ImageDomainType.ROUTE,
-                ).onFailure{Timber.e(it)}.getOrThrow()
+                val currentState = _state.value
 
-                registerImage
-            }
+                val routeImage = currentState.snapshotUri?.let { uri ->
+                    val presignedResult = imageRepository.presignedImage(
+                        ImagePresignedEntity(
+                            domain = ImageDomainType.ROUTE,
+                            contentType = "image/webp"
+                        )
+                    ).getOrElse {
+                        _sideEffect.emit(WalkCourseSideEffect.ShowSnackBar("이미지 업로드 준비 실패"))
+                        return@withContext
+                    }
 
-            walkRepository.finishWalk(
-                routeId = routeId,
-                walkFinish = currentState.toEntity()
-            ).onSuccess { result ->
-                _state.update { it.copy(isStopTracking = true) }
-                _sideEffect.emit(WalkCourseSideEffect.NavigateComplete(result.routeId, routeImage?.imageId ?: -1))
-            }.onFailure {
-                Timber.e(it)
-                _sideEffect.emit(WalkCourseSideEffect.ShowSnackBar("산책 종료 실패"))
+                    imageRepository.uploadS3(
+                        presignedUrl = presignedResult.uploadUrl,
+                        uriString = uri
+                    ).getOrElse {
+                        _sideEffect.emit(WalkCourseSideEffect.ShowSnackBar("이미지 업로드 실패"))
+                        return@withContext
+                    }
+
+                    val registerImage = imageRepository.registerImage(
+                        uriString = "${presignedResult.imageUrl}#${uri}",
+                        domainType = ImageDomainType.ROUTE,
+                    ).onFailure { Timber.Forest.e(it) }.getOrThrow()
+
+                    registerImage
+                }
+
+                walkRepository.finishWalk(
+                    routeId = routeId!!,
+                    walkFinish = currentState.toEntity()
+                ).onSuccess { result ->
+                    _state.update { it.copy(isStopTracking = true) }
+                    _sideEffect.emit(
+                        WalkCourseSideEffect.NavigateComplete(
+                            result.routeId,
+                            routeImage?.imageId ?: -1
+                        )
+                    )
+                }.onFailure {
+                    it.printStackTrace()
+                    Timber.e(it)
+                    _sideEffect.emit(WalkCourseSideEffect.ShowSnackBar("산책 종료 실패"))
+                }
             }
         }
     }

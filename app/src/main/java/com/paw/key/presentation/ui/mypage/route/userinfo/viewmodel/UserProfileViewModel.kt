@@ -2,9 +2,9 @@ package com.paw.key.presentation.ui.mypage.route.userinfo.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.paw.key.domain.repository.localstorage.LocalStorageRepository
 import com.paw.key.domain.repository.mypage.MypageRepository
 import com.paw.key.domain.repository.user.UserRepository
+import com.paw.key.presentation.ui.mypage.main.model.NON_DIGIT_REGEX
 import com.paw.key.presentation.ui.mypage.route.userinfo.model.UserProfileSideEffect
 import com.paw.key.presentation.ui.mypage.route.userinfo.model.UserProfileState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -34,24 +35,29 @@ class UserProfileViewModel @Inject constructor(
     }
 
     fun onNameChange(value: String) = _state.update { it.copy(name = value) }
-    fun onBirthChange(value: String) = _state.update { it.copy(birth = value) }
+
+    fun onBirthChange(value: String) {
+        val digitsOnly = value.replace(NON_DIGIT_REGEX, "").take(8)
+
+        _state.update { it.copy(birth = digitsOnly) }
+    }
+
     fun onGenderChange(value: String) = _state.update { it.copy(gender = value) }
     fun getUserProfiles() {
         viewModelScope.launch {
             userRepository.getUserProfiles()
                 .onSuccess { result ->
-                    _sideEffect.emit(UserProfileSideEffect.ShowSnackBar("유저 프로필 불러오기 성공"))
-
                     _state.update { state ->
                         state.copy(
                             name = result.name,
-                            gender = result.gender,
-                            birth = result.birth.orEmpty(),
+                            gender = if (result.gender == "남성") "M" else "F",
+                            birth = result.birth?.replace(NON_DIGIT_REGEX, "").orEmpty(),
 //                            email = result.email
                         )
                     }
                 }
                 .onFailure { e ->
+                    Timber.e(e)
                     _sideEffect.emit(UserProfileSideEffect.ShowSnackBar(e.message ?: "프로필을 불러오지 못했습니다"))
                 }
         }
@@ -68,7 +74,11 @@ class UserProfileViewModel @Inject constructor(
             return
         }
 
-        val formattedBirth = s.birth.replace(".", "-").replace("/", "-")
+        val formattedBirth = if (s.birth.length == 8) {
+            "${s.birth.substring(0, 4)}-${s.birth.substring(4, 6)}-${s.birth.substring(6)}"
+        } else {
+            s.birth
+        }
 
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
@@ -81,6 +91,7 @@ class UserProfileViewModel @Inject constructor(
                 _sideEffect.emit(UserProfileSideEffect.NavigateUp)
                 _state.update { it.copy(isLoading = false) }
             }.onFailure { e ->
+                Timber.e(e)
                 _sideEffect.emit(UserProfileSideEffect.ShowSnackBar(e.message ?: "수정에 실패했습니다"))
                 _state.update { it.copy(isLoading = false) }
             }

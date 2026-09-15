@@ -2,6 +2,7 @@ package com.paw.key.presentation.ui.region
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -36,11 +37,13 @@ fun RegionSearchScreen(
     regionList: ImmutableList<RegionDistrictModel>,
     selectedGu: RegionGuModel,
     selectedDong: RegionDongModel,
-    onRegionSelected: (RegionGuModel, RegionDongModel) -> Unit
+    onRegionSelected: (RegionGuModel, RegionDongModel) -> Unit,
+    onSaveRegionClick: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var isSheetOpen by remember { mutableStateOf(false) }
+    val isRegionSelected = selectedGu.name.isNotEmpty() && selectedDong.name.isNotEmpty()
 
     Column (
         modifier = Modifier
@@ -75,12 +78,18 @@ fun RegionSearchScreen(
         Spacer(modifier = Modifier.weight(1f))
 
         DokiButton(
-            text = "수정하기",
+            text = if (isRegionSelected) "저장하기" else "수정하기",
             enabled = true,
             onClick = {
-                scope.launch { isSheetOpen = true }
+                if (isRegionSelected) {
+                    onSaveRegionClick()
+                } else {
+                    scope.launch { isSheetOpen = true }
+                }
             }
         )
+
+        Spacer(modifier = Modifier.height(34.dp))
     }
 
     if (isSheetOpen) {

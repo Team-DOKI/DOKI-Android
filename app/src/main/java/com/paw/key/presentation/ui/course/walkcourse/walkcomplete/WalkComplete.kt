@@ -1,5 +1,6 @@
 package com.paw.key.presentation.ui.course.walkcourse.walkcomplete
 
+import android.view.Gravity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -34,6 +35,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.naver.maps.geometry.LatLng
 import com.naver.maps.map.CameraUpdate
 import com.naver.maps.map.compose.ExperimentalNaverMapApi
+import com.naver.maps.map.compose.MapUiSettings
 import com.naver.maps.map.compose.NaverMap
 import com.naver.maps.map.compose.PathOverlay
 import com.naver.maps.map.compose.rememberCameraPositionState
@@ -129,7 +131,8 @@ private fun WalkCompleteScreen(
                         .size(36.dp)
                         .aspectRatio(1f)
                         .clip(CircleShape),
-                    contentScale = ContentScale.Crop
+                    contentScale = ContentScale.Crop,
+                    isUserIcon = true
                 )
 
                 Spacer(modifier = Modifier.width(10.dp))
@@ -152,6 +155,11 @@ private fun WalkCompleteScreen(
             // 지도 사진
             NaverMap (
                 cameraPositionState = cameraPositionState,
+                uiSettings = MapUiSettings(
+                    logoGravity = Gravity.TOP or Gravity.END,
+                    isZoomControlEnabled = false,
+                    isLogoClickEnabled = true
+                ),
                 modifier = Modifier
                     .fillMaxWidth()
                     .fillMaxHeight(0.8f)

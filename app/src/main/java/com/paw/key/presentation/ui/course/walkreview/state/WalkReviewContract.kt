@@ -5,7 +5,9 @@ import androidx.compose.runtime.Immutable
 import com.paw.key.presentation.ui.community.model.FilterCategoryUiModel
 import com.paw.key.presentation.ui.community.model.PostsFilterUiModel
 import com.paw.key.presentation.ui.community.model.SelectionType
+import com.paw.key.presentation.ui.course.walkreview.model.CompletePostsUiModel
 import com.paw.key.presentation.ui.course.walkreview.model.WalkReviewRouteSummaryUiModel
+import com.paw.key.presentation.ui.course.walkreview.model.WalkSharedReviewUiModel
 import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.persistentListOf
@@ -23,6 +25,9 @@ data class WalkReviewState(
     val walkReviewContent: String = "",
 
     val isComplete: Boolean = false,
+    val completePostsUiModel : CompletePostsUiModel = CompletePostsUiModel(),
+    val isShared: Boolean = false,
+    val sharedReviewHeader: WalkSharedReviewUiModel = WalkSharedReviewUiModel()
 ) {
     // 특정 카테고리에서 선택된 ID 리스트 가져오기
     fun getSelectedOptionIds(category: FilterCategoryUiModel): PersistentList<Int> {

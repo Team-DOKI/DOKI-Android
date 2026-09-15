@@ -9,7 +9,7 @@ data class PetProfileResponseDto(
     @SerialName("petId")
     val petId: Long,
     @SerialName("imageUrl")
-    val imageUrl: String,
+    val imageUrl: String?,
     @SerialName("name")
     val name: String,
     @SerialName("birth")

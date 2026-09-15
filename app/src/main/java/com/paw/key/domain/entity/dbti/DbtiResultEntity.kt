@@ -1,4 +1,4 @@
-package com.paw.key.domain.entity.DBTI
+package com.paw.key.domain.entity.dbti
 
 data class DbtiResultEntity(
     val type: String,

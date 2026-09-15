@@ -7,8 +7,8 @@ import javax.inject.Inject
 class HomeRegionDataSource @Inject constructor(
     private val service: HomeRegionService
 ) {
-    suspend fun patchRegion(userId: Int, regionId: Int) =
-        service.patchRegion(userId, HomeRegionRequest(regionId))
+    suspend fun patchRegion(regionId: Int) =
+        service.patchRegion(HomeRegionRequest(regionId))
 
     suspend fun getHomeInfo() =
         service.getHomeInfo()

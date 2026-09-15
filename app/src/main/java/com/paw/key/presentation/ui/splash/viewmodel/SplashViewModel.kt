@@ -49,7 +49,15 @@ class SplashViewModel @Inject constructor(
                 .onSuccess { (accessToken, newRefreshToken) ->
                     Timber.e("checkTokenSuc $accessToken")
                     localStorageRepository.saveTokens(accessToken.value, newRefreshToken.value)
-                    _sideEffect.send(SplashSideEffect.NavigateToHome)
+                    val petId = localStorageRepository.getPetId()
+
+                    if (petId == -1) {
+                        // 기존 회원이지만 petId가 없는 경우 (회원가입/펫등록 프로세스 미완료)
+                        _sideEffect.send(SplashSideEffect.NavigateToSignUp)
+                    } else {
+                        // 정상적으로 로그인 + petId까지 있는 경우
+                        _sideEffect.send(SplashSideEffect.NavigateToHome)
+                    }
                 }
                 .onFailure {
                     Timber.e("checkTokenFail $it")

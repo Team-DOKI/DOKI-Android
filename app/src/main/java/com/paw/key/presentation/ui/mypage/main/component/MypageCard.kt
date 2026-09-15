@@ -32,6 +32,7 @@ fun MyPageCard(
     dogImage: String?,
     buttonTitle: String,
     onButtonClick: () -> Unit,
+    navigatePetProfile: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -41,6 +42,7 @@ fun MyPageCard(
                 color = PawKeyTheme.colors.background,
                 shape = RoundedCornerShape(16.dp)
             )
+            .noRippleClickable(onClick = navigatePetProfile)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -82,11 +84,12 @@ private fun MyPageCardContent(
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         UrlImage(
-            url = image!!,
+            url = image ?: "",
             modifier = Modifier
                 .size(64.dp)
                 .clip(CircleShape),
             contentScale = ContentScale.Crop,
+            isUserIcon = true
         )
 
         Column(
@@ -146,7 +149,8 @@ private fun MyPageCardPreview() {
             dogBreed = "견종 이름",
             buttonTitle = "DBTI 검사하러 가기",
             dogImage = null,
-            onButtonClick = {}
+            onButtonClick = {},
+            navigatePetProfile = {}
         )
     }
 }
